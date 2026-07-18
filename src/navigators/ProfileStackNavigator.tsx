@@ -1,0 +1,23 @@
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { ProfileScreen } from '../screens/profileScreens/ProfileScreen';
+import { OffersScreen } from '../screens/profileScreens/Offers';
+import { EditProfileScreen } from '../screens/profileScreens/EditProfileScreen';
+import PremiumMembershipScreen from '../screens/profileScreens/PremiumMembership';
+import ReferralPage from '../screens/profileScreens/ReferralPage';
+import WalletPage from '../screens/profileScreens/WalletPage';
+
+const Stack = createNativeStackNavigator();
+
+export function ProfileStackNavigator() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false ,statusBarColor:'#000'}}>
+      <Stack.Screen name="ProfileIndex" component={ProfileScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      
+      <Stack.Screen name="Referral" component={ReferralPage}/>
+      <Stack.Screen name="Offers" component={OffersScreen} />
+      <Stack.Screen name="Wallet" component={WalletPage}/>
+    </Stack.Navigator>
+  );
+}

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>cocarrApp</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>We require full access to your calendar to help you manage and schedule your car bookings efficiently.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>We require write-only access to your calendar to add car booking events without reading your existing events.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We require the use of the camera to allow you to take photos for your profile and vehicle documentation.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We require your location to provide accurate car rental services and navigation assistance.</string>
+	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
+	<dict>
+		<key>YOUR-PURPOSE-KEY</key>
+		<string>We require temporary use of your location to enhance the booking experience by suggesting nearby rental options.</string>
+	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We require your location while in use to show nearby car rental options and provide navigation support.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We require permission to save images to your photo library for storing vehicle and booking-related photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We require access to your photo library to allow you to upload images for your profile and vehicle documentation.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>We require access to your reminders to help you keep track of upcoming car bookings and returns.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>We require tracking to provide personalized offers and improve the user experience.</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Geist-Regular.ttf</string>
+		<string>HostGrotesk-Bold.ttf</string>
+		<string>HostGrotesk-Medium.ttf</string>
+		<string>HostGrotesk-Regular.ttf</string>
+		<string>HostGrotesk-SemiBold.ttf</string>
+		<string>MonaSans-Bold.ttf</string>
+		<string>MonaSans-ExtraBold.ttf</string>
+		<string>MonaSans-Medium.ttf</string>
+		<string>MonaSans-Regular.ttf</string>
+		<string>MonaSans-SemiBold.ttf</string>
+	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>BootSplash</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+</dict>
+</plist>

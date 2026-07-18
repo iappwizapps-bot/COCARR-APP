@@ -1,0 +1,61 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "fonts/Geist-Bold.ttf",
+      "sha1": "026330c06c7e45d360dfbd2ce6a803fe5f4d1a6a"
+    },
+    {
+      "path": "fonts/Geist-Light.ttf",
+      "sha1": "6115346b1691a5650edfe8e60c5c13a92833789f"
+    },
+    {
+      "path": "fonts/Geist-Medium.ttf",
+      "sha1": "a600be28e2aace53fefa81e3f1fd1f05c978ef77"
+    },
+    {
+      "path": "fonts/Geist-Regular.ttf",
+      "sha1": "edafc7c65cff343e301e4ccd5b5680bb726ff9e7"
+    },
+    {
+      "path": "fonts/Geist-SemiBold.ttf",
+      "sha1": "fcdef3c84b886c795dd344a6fc663b1097793c16"
+    },
+    {
+      "path": "fonts/HostGrotesk-Bold.ttf",
+      "sha1": "14bd8dc7f432723d9fc5e70047c81ee50d66d444"
+    },
+    {
+      "path": "fonts/HostGrotesk-Medium.ttf",
+      "sha1": "ac6f6d134cb3a5d0812933a651f9623f3059cc57"
+    },
+    {
+      "path": "fonts/HostGrotesk-Regular.ttf",
+      "sha1": "62a14a9a70ddfe3a4a1ec37f2157204623b01c74"
+    },
+    {
+      "path": "fonts/HostGrotesk-SemiBold.ttf",
+      "sha1": "65e886e0827aeea9acb15db00f05c8b8415ad0cf"
+    },
+    {
+      "path": "fonts/MonaSans-Bold.ttf",
+      "sha1": "a3d1d3375579592a7f3b622dd5ae319b27c748ac"
+    },
+    {
+      "path": "fonts/MonaSans-ExtraBold.ttf",
+      "sha1": "941901797152878f41623a83d9a95b6fc6af3ca4"
+    },
+    {
+      "path": "fonts/MonaSans-Medium.ttf",
+      "sha1": "7078b4798f73f1375ee284076d11897513804351"
+    },
+    {
+      "path": "fonts/MonaSans-Regular.ttf",
+      "sha1": "ae1b0abcfc13f043bdd116efb34cb652bd3ecb4b"
+    },
+    {
+      "path": "fonts/MonaSans-SemiBold.ttf",
+      "sha1": "ca589fc844ae7a2c20ba8d9d55efc0aa3dd4aec6"
+    }
+  ]
+}

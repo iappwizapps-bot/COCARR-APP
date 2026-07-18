@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "32758101659",
+    "project_id": "cocarr-rimor",
+    "storage_bucket": "cocarr-rimor.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:32758101659:android:9eaac16da5f63cd028783e",
+        "android_client_info": {
+          "package_name": "com.cocarrapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "32758101659-ocuvlg71sh27bcq903nbvsb7osr93vvt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDC-ppZ-x1Y_nnItUZOizMihsv6JcoaMws"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "32758101659-ocuvlg71sh27bcq903nbvsb7osr93vvt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
