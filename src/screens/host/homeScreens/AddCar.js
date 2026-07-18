@@ -3,7 +3,6 @@ import { View, Text, Button, TextInput, TouchableOpacity, StatusBar, KeyboardAvo
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { API_URL, BRAND_COLOR } from '../../../utils/constants';
-import { mergeBrands } from '../../../utils/brands';
 import CustomText from '../../../components/CustomText';
 import Select from '../../../components/Select';
 import axios from 'axios';
@@ -141,11 +140,10 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
     async function getBrands() {
         try {
             const response = await axios.get(API_URL+'/brand');
-            // Merge the full car-brand list in; API entries keep real ids.
-            setBrands(mergeBrands(response.data));
+            setBrands(response.data);
         } catch (error) {
             console.error('Error fetching brands:', error);
-            setBrands(mergeBrands([]));
+            return [];
         }
     }
    
