@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setSelectedCity  as setSelectedCityAction, setShowCityPicker} from '../../store/bookingSlice';
 import axios from 'axios';
 import { API_URL, BRAND_COLOR } from '../../utils/constants';
+import { mergeCities } from '../../utils/cities';
 import ActionSheet, { ScrollView } from 'react-native-actions-sheet';
 import CustomText from '../../components/CustomText';
 
@@ -51,10 +52,12 @@ export function CityPickerScreen() {
     async function fetchCities() {
         try {
             const response = await axios.get(`${API_URL}/city`);
-            setCities(response.data);
-            console.log('response.data', response.data)
+            // Merge the major-city list in so the full set always shows; API
+            // entries keep their real ids so vehicle search works.
+            setCities(mergeCities(response.data));
         } catch (error) {
             console.error('Error fetching cities:', error);
+            setCities(mergeCities([]));
         }
     }
 
