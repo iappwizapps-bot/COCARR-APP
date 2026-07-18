@@ -1,0 +1,6 @@
+git_url(ENV["MATCH_GIT_URL"])
+storage_mode("git")
+type("adhoc")
+app_identifier(["com.iappwiz.cocarr"])
+team_id("FL8PARABU2")
+readonly(true)

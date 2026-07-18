@@ -1,0 +1,76 @@
+name: iOS Firebase App Distribution
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: "Release notes shown to testers"
+        required: false
+        default: "Manual CI build"
+      tester_groups:
+        description: "Firebase App Distribution tester group alias(es), comma-separated"
+        required: false
+        default: "internal-testers"
+
+concurrency:
+  group: ios-firebase-distribution-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-distribute:
+    runs-on: macos-14
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2
+          bundler-cache: true
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          bundle exec pod install --repo-update
+
+      - name: Decode Firebase service account key
+        env:
+          FIREBASE_SERVICE_ACCOUNT_B64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_B64 }}
+        run: echo "$FIREBASE_SERVICE_ACCOUNT_B64" | base64 --decode > firebase-service-account.json
+
+      - name: Build & distribute via Fastlane
+        env:
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          FIREBASE_SERVICE_ACCOUNT_FILE: firebase-service-account.json
+          FIREBASE_TESTER_GROUPS: ${{ github.event.inputs.tester_groups || 'internal-testers' }}
+          RELEASE_NOTES: ${{ github.event.inputs.release_notes || format('CI build {0}', github.sha) }}
+        run: bundle exec fastlane ios distribute
+
+      - name: Clean up secrets
+        if: always()
+        run: rm -f firebase-service-account.json
+
+      - name: Upload IPA artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cocarrApp-ipa
+          path: build/cocarrApp.ipa
+          retention-days: 14
