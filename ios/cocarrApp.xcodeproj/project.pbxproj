@@ -22,8 +22,6 @@
 		5FAB4EBE78D74109B34680AA /* Geist-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 845B5090632C4A64A08EF605 /* Geist-Bold.ttf */; };
 		67C888E6E3A345DFAF4B8EBE /* HostGrotesk-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1EEED66EEB4140D6B265F738 /* HostGrotesk-Bold.ttf */; };
 		76F2FF0A24964E5FAF5D2DF9 /* MonaSans-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 190FBE8D656C4891868C5A2A /* MonaSans-SemiBold.ttf */; };
-		7DBBA5152CEF2DA10030E7DE /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7DBBA5142CEF2DA10030E7DE /* GoogleService-Info.plist */; };
-		7DBBA5162CEF2DA10030E7DE /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7DBBA5142CEF2DA10030E7DE /* GoogleService-Info.plist */; };
 		7E5A2057A03F4EE48576F241 /* HostGrotesk-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5A0FB537BF6B4FEFA7CDE729 /* HostGrotesk-Medium.ttf */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		A0C63CAF5285432E83D7BD22 /* HostGrotesk-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E4F361D422AB4E5599B5C8E9 /* HostGrotesk-Regular.ttf */; };
@@ -31,6 +29,8 @@
 		AB80F31F7D114AD5A836ABE5 /* MonaSans-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BC54D6E9CBFF4D1689093E8B /* MonaSans-ExtraBold.ttf */; };
 		AE91B1F20DE443C29FEAE9BC /* Geist-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C433402332C948B8AFFA2BB8 /* Geist-Regular.ttf */; };
 		C43BEC7A09A24C53921A42CB /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1FD33792A344483A897CFB48 /* Colors.xcassets */; };
+		CD98FAEA300B3A4A00661693 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CD98FAE9300B3A4A00661693 /* GoogleService-Info.plist */; };
+		CD98FAEB300B3A4A00661693 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CD98FAE9300B3A4A00661693 /* GoogleService-Info.plist */; };
 		F58D6827FD6D4E158CBA3872 /* Geist-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BBDDD12A187B48A0955870A6 /* Geist-SemiBold.ttf */; };
 		FC47152B6B43499CAFB72D20 /* Geist-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2913F0AA458645019D6B507E /* Geist-Medium.ttf */; };
 /* End PBXBuildFile section */
@@ -68,7 +68,6 @@
 		5B7EB9410499542E8C5724F5 /* Pods-cocarrApp-cocarrAppTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-cocarrApp-cocarrAppTests.debug.xcconfig"; path = "Target Support Files/Pods-cocarrApp-cocarrAppTests/Pods-cocarrApp-cocarrAppTests.debug.xcconfig"; sourceTree = "<group>"; };
 		5C73F081FB8A0BE334647DA3 /* Pods_cocarrApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_cocarrApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		7280DC052E2A4480A8EDD315 /* MonaSans-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "MonaSans-Bold.ttf"; path = "../fonts/MonaSans-Bold.ttf"; sourceTree = "<group>"; };
-		7DBBA5142CEF2DA10030E7DE /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = cocarrApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		845B5090632C4A64A08EF605 /* Geist-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Geist-Bold.ttf"; path = "../fonts/Geist-Bold.ttf"; sourceTree = "<group>"; };
 		89C6BE57DB24E9ADA2F236DE /* Pods-cocarrApp-cocarrAppTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-cocarrApp-cocarrAppTests.release.xcconfig"; path = "Target Support Files/Pods-cocarrApp-cocarrAppTests/Pods-cocarrApp-cocarrAppTests.release.xcconfig"; sourceTree = "<group>"; };
@@ -77,6 +76,7 @@
 		BBDDD12A187B48A0955870A6 /* Geist-SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Geist-SemiBold.ttf"; path = "../fonts/Geist-SemiBold.ttf"; sourceTree = "<group>"; };
 		BC54D6E9CBFF4D1689093E8B /* MonaSans-ExtraBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "MonaSans-ExtraBold.ttf"; path = "../fonts/MonaSans-ExtraBold.ttf"; sourceTree = "<group>"; };
 		C433402332C948B8AFFA2BB8 /* Geist-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Geist-Regular.ttf"; path = "../fonts/Geist-Regular.ttf"; sourceTree = "<group>"; };
+		CD98FAE9300B3A4A00661693 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		D12ED4534C0CEF3658DC204B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = cocarrApp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		E4F361D422AB4E5599B5C8E9 /* HostGrotesk-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "HostGrotesk-Regular.ttf"; path = "../fonts/HostGrotesk-Regular.ttf"; sourceTree = "<group>"; };
 		E586519D8B224215807941CD /* MonaSans-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "MonaSans-Regular.ttf"; path = "../fonts/MonaSans-Regular.ttf"; sourceTree = "<group>"; };
@@ -179,7 +179,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				7DBBA5142CEF2DA10030E7DE /* GoogleService-Info.plist */,
+				CD98FAE9300B3A4A00661693 /* GoogleService-Info.plist */,
 				13B07FAE1A68108700A75B9A /* cocarrApp */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				00E356EF1AD99517003FC87E /* cocarrAppTests */,
@@ -300,7 +300,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7DBBA5162CEF2DA10030E7DE /* GoogleService-Info.plist in Resources */,
+				CD98FAEA300B3A4A00661693 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -309,7 +309,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
-				7DBBA5152CEF2DA10030E7DE /* GoogleService-Info.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				536473ED3C09B54E6A48E583 /* PrivacyInfo.xcprivacy in Resources */,
 				5FAB4EBE78D74109B34680AA /* Geist-Bold.ttf in Resources */,
@@ -328,6 +327,7 @@
 				76F2FF0A24964E5FAF5D2DF9 /* MonaSans-SemiBold.ttf in Resources */,
 				38D1532B63074818AE2D951D /* BootSplash.storyboard in Resources */,
 				C43BEC7A09A24C53921A42CB /* Colors.xcassets in Resources */,
+				CD98FAEB300B3A4A00661693 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
