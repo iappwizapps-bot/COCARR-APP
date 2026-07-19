@@ -1,4 +1,4 @@
-name: iOS Development Build
+name: React Native iOS CI
 
 on:
   push:
@@ -8,9 +8,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-distribute:
 
-    runs-on: macos-15
+  build:
+
+    runs-on: macos-latest
 
     env:
       FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
@@ -21,6 +22,15 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Node Modules
+        run: npm ci
+
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -28,54 +38,45 @@ jobs:
 
       - name: Install CocoaPods
         run: |
-          sudo gem install cocoapods
 
-      - name: Install Pods
-        run: |
+          cd ios
+
           pod install
-
-      - name: Resolve Swift Packages
-        run: |
-          xcodebuild \
-            -resolvePackageDependencies \
-            -workspace cocarrApp.xcworkspace \
-            -scheme cocarrApp
 
       - name: Archive App
         run: |
-          mkdir -p build
 
           xcodebuild archive \
-            -workspace cocarrApp.xcworkspace \
-            -scheme cocarrApp \
-            -configuration Release \
-            -archivePath build/cocarrApp.xcarchive \
-            -destination "generic/platform=iOS" \
-            CODE_SIGN_STYLE=Automatic
+          -workspace ios/cocarrApp.xcworkspace \
+          -scheme cocarrApp \
+          -configuration Release \
+          -archivePath build/cocarrApp.xcarchive \
+          -destination "generic/platform=iOS"
 
       - name: Export IPA
         run: |
+
           xcodebuild \
-            -exportArchive \
-            -archivePath build/cocarrApp.xcarchive \
-            -exportOptionsPlist ExportOptions.plist \
-            -exportPath build
+          -exportArchive \
+          -archivePath build/cocarrApp.xcarchive \
+          -exportOptionsPlist ExportOptions.plist \
+          -exportPath build
 
       - name: Install Firebase CLI
-        run: |
-          npm install -g firebase-tools
+        run: npm install -g firebase-tools
 
-      - name: Upload to Firebase
+      - name: Upload Firebase
         run: |
+
           firebase appdistribution:distribute \
-            build/cocarrApp.ipa \
-            --app "$FIREBASE_APP_ID" \
-            --groups tester \
-            --release-notes "GitHub Actions Build #${{ github.run_number }}" \
-            --token "$FIREBASE_TOKEN"
+          build/cocarrApp.ipa \
+          --app "$FIREBASE_APP_ID" \
+          --groups developers \
+          --release-notes "Build #${{ github.run_number }}" \
+          --token "$FIREBASE_TOKEN"
 
-      - name: Upload IPA Artifact
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: cocarrApp-ipa
+          name: ipa
           path: build/cocarrApp.ipa
