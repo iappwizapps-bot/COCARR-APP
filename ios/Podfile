@@ -68,6 +68,21 @@ target 'cocarrApp' do
     # Pods for testing
   end
 
+  # Fix Xcode "Multiple commands produce <icon>.ttf": the app target already
+  # bundles the vector-icon fonts (Copy Bundle Resources / UIAppFonts), and the
+  # RNVectorIcons pod copies them again via s.resources. Under use_frameworks!
+  # that produces the font file twice. Zero out the pod's resource paths so the
+  # fonts are produced only once (by the app target), keeping icons working.
+  pre_install do |installer|
+    installer.pod_targets.each do |pod|
+      if pod.name == 'RNVectorIcons'
+        def pod.resource_paths
+          []
+        end
+      end
+    end
+  end
+
   post_install do |installer|
     # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
     react_native_post_install(
