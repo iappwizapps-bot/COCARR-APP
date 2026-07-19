@@ -76,8 +76,10 @@ target 'cocarrApp' do
   pre_install do |installer|
     installer.pod_targets.each do |pod|
       if pod.name == 'RNVectorIcons'
+        # resource_paths is a Hash ({config => [paths]}) in modern CocoaPods,
+        # so return an empty Hash (not []) to drop the font resources safely.
         def pod.resource_paths
-          []
+          {}
         end
       end
     end
