@@ -8,9 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-
   build:
-
     runs-on: macos-latest
 
     env:
@@ -18,11 +16,10 @@ jobs:
       FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -36,47 +33,63 @@ jobs:
         with:
           xcode-version: latest
 
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ios/Pods
+            ~/Library/Caches/CocoaPods
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
       - name: Install CocoaPods
+        working-directory: ios
         run: |
-
-          cd ios
-
-          pod install
+          pod install --repo-update
 
       - name: Archive App
         run: |
+          set -eo pipefail
 
           xcodebuild archive \
-          -workspace ios/cocarrApp.xcworkspace \
-          -scheme cocarrApp \
-          -configuration Release \
-          -archivePath build/cocarrApp.xcarchive \
-          -destination "generic/platform=iOS"
+            -workspace ios/cocarrApp.xcworkspace \
+            -scheme cocarrApp \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath build/cocarrApp.xcarchive \
+            COMPILER_INDEX_STORE_ENABLE=NO
 
       - name: Export IPA
         run: |
+          set -eo pipefail
 
           xcodebuild \
-          -exportArchive \
-          -archivePath build/cocarrApp.xcarchive \
-          -exportOptionsPlist ExportOptions.plist \
-          -exportPath build
+            -exportArchive \
+            -archivePath build/cocarrApp.xcarchive \
+            -exportOptionsPlist ExportOptions.plist \
+            -exportPath build
+
+      - name: Verify Export
+        run: |
+          ls -la build
+          test -f build/cocarrApp.ipa
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      - name: Upload Firebase
+      - name: Upload to Firebase App Distribution
         run: |
-
           firebase appdistribution:distribute \
-          build/cocarrApp.ipa \
-          --app "$FIREBASE_APP_ID" \
-          --groups developers \
-          --release-notes "Build #${{ github.run_number }}" \
-          --token "$FIREBASE_TOKEN"
+            build/cocarrApp.ipa \
+            --app "${{ env.FIREBASE_APP_ID }}" \
+            --groups "developers" \
+            --release-notes "GitHub Actions Build #${{ github.run_number }}" \
+            --token "${{ env.FIREBASE_TOKEN }}"
 
-      - name: Upload IPA
+      - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ipa
+          name: cocarrApp-${{ github.run_number }}
           path: build/cocarrApp.ipa
+          if-no-files-found: error
