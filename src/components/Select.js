@@ -21,7 +21,7 @@ const Select = ({ options, selected, onSelect ,label='name',placeholder='Select 
   return (
     <View style={{flexDirection:'row', alignItems:'center', justifyContent:'space-between', backgroundColor:'#1c1c1e',borderRadius:5,shadowOpacity:0.5,shadowRadius:1,shadowColor:'#454545',width:'100%',...containerStyle}}>
       <TouchableOpacity onPress={() => actionSheetRef.current?.show()} style={{flex:1,paddingVertical:12,paddingHorizontal:12,justifyContent:'space-between',flexDirection:'row',alignItems:'center'}}>
-        <Text>{selectedOption ? selectedOption[label] : placeholder}</Text>
+        <Text style={{color: selectedOption ? '#efefef' : '#959595', fontSize:14}}>{selectedOption ? selectedOption[label] : placeholder}</Text>
         <Icons name="chevron-down" size={13} color="#959595" style={{marginBottom:3,marginLeft:4}} />
       </TouchableOpacity>
       <ActionSheet ref={actionSheetRef} containerStyle={{backgroundColor:'#1c1c1e',height:'50%'}} height={'50%'} safeAreaInsets={{bottom:0}}>
