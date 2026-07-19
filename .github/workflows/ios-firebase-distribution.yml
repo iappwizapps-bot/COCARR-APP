@@ -30,19 +30,21 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies
+      - name: Install Node Dependencies
         run: npm ci
 
-     - name: Install CocoaPods
-          working-directory: ios
-          run:
-              bundle exec pod install
-
       - name: Setup Ruby
-          uses: ruby/setup-ruby@v1
-          with:
-            ruby-version: '3.2'
-            bundler-cache: true
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install Ruby Gems
+        run: bundle install
+
+      - name: Install CocoaPods
+        working-directory: ios
+        run: bundle exec pod install
 
       - name: Run Fastlane
         working-directory: ios
