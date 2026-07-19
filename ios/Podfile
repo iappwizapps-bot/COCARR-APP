@@ -75,11 +75,17 @@ target 'cocarrApp' do
   # fonts are produced only once (by the app target), keeping icons working.
   pre_install do |installer|
     installer.pod_targets.each do |pod|
-      if pod.name == 'RNVectorIcons'
-        # resource_paths is a Hash ({config => [paths]}) in modern CocoaPods,
-        # so return an empty Hash (not []) to drop the font resources safely.
-        def pod.resource_paths
-          {}
+      next unless pod.name == 'RNVectorIcons'
+      # resource_paths is a Hash { config => [paths] }. Keep that shape (so
+      # CocoaPods' resource_paths_by_config doesn't choke on nil) but strip the
+      # .ttf font paths, so the fonts aren't copied a second time by the pod.
+      original = pod.method(:resource_paths)
+      pod.define_singleton_method(:resource_paths) do |*args|
+        result = original.call(*args)
+        if result.is_a?(Hash)
+          result.transform_values { |paths| Array(paths).reject { |p| p.to_s.end_with?('.ttf') } }
+        else
+          result
         end
       end
     end
