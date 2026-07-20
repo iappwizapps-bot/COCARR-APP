@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { Calendar } from 'react-native-calendars';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { setSelectedCity  as setSelectedCityAction, setShowCityPicker} from '../../store/bookingSlice';
+import { setSelectedCity  as setSelectedCityAction, setShowCityPicker, setShowCityLocation} from '../../store/bookingSlice';
 import axios from 'axios';
 import { API_URL, BRAND_COLOR } from '../../utils/constants';
 import ActionSheet, { ScrollView } from 'react-native-actions-sheet';
@@ -57,10 +57,26 @@ export function CityPickerScreen() {
         }
     }
 
-  const handleConfirm = (item) => 
-    {
+  // Selecting a city also fills the location field with that city's
+  // coordinates, resolved to a readable address when possible.
+  const handleConfirm = async (item) => {
         try {
-            dispatch(setSelectedCityAction({id:item.id,name:item.name,showCityPicker:false}));
+            const detectedLocation = {
+                name: item.name,
+                latitude: item.lat,
+                longitude: item.lng,
+            };
+            try {
+                const res = await axios.get(`${API_URL}/utility/get-place?lat=${item.lat}&long=${item.lng}`);
+                if (res.data) detectedLocation.name = res.data;
+            } catch (e) {
+                // fall back to the city name
+            }
+            dispatch(setShowCityLocation({
+                selectedCity: { id: item.id, name: item.name },
+                selectedLocation: detectedLocation,
+            }));
+            dispatch(setShowCityPicker(false));
             actionSheetRef.current.hide();
         } catch (error) {
             console.error('Error confirming city selection:', error);
@@ -74,55 +90,67 @@ export function CityPickerScreen() {
 
   return (
     <ActionSheet
-      CustomHeaderComponent={<CustomText fontType='primary' weight='Bold' style={{color:'#fff', fontSize:14, fontWeight:'500',textTransform:'uppercase',letterSpacing:.15,fontFamily:'Inter-Bold',marginBottom:2}}>Select City</CustomText>}
+      CustomHeaderComponent={
+        <View style={styles.sheetHeader}>
+          <CustomText fontType='primary' weight='Bold' style={{color:'#fff', fontSize:14, fontWeight:'500',textTransform:'uppercase',letterSpacing:.15,fontFamily:'Inter-Bold'}}>Select City</CustomText>
+          <TouchableOpacity onPress={onClose} hitSlop={{top:12,bottom:12,left:12,right:12}} style={styles.closeButton}>
+            <Icon name="close" size={20} color="#e3e3e3" />
+          </TouchableOpacity>
+        </View>
+      }
       ref={actionSheetRef}
-      containerStyle={{backgroundColor:'#2c2c2e',minHeight:'75%'}}
+      containerStyle={{backgroundColor:'#1c1c1e',minHeight:'70%'}}
       isModal={true}
       isVisible={true}
       onClose={onClose}
       defaultOverlayOpacity={0.75}
-      // gestureEnabled={true}
     >
       <View style={styles.modalContainer}>
-        {/* <View style={{flex:1,width:'100%',height:300}}> */}
-          {/* <ScrollView style={{flex:1}} contentContainerStyle={{flexGrow:1}}> */}
-
-        {/* <CustomText fontType='primary' weight='Bold' style={{color:'#a3a3a3', fontSize:14, fontWeight:'500',textTransform:'uppercase',letterSpacing:.15,fontFamily:'Inter-Bold',marginBottom:2}}>Select City</CustomText> */}
         <FlatList
-            data={cities}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.cityItem} onPress={() => handleConfirm(item)}>
-                <Icon name={bookingInfo.selectedCity?.id === item.id ? "checkmark-circle" : "checkmark-circle-outline"} size={20} color={bookingInfo.selectedCity?.id === item.id ? BRAND_COLOR : '#a3a3a3'} />
-                    <CustomText fontType='primary' weight='Regular' style={{color:'#e3e3e3', fontSize:14,textTransform:'capitalize'}}>{item.name}</CustomText>
-                </TouchableOpacity>
-            )}
-            />
-            {/* </ScrollView> */}
-
-          {/* <TouchableOpacity 
-            style={[
-              styles.confirmButton,
-              (!selectedCity) && styles.confirmButtonDisabled
-            ]} 
-            onPress={handleConfirm}
-            disabled={!selectedCity}
-          >
-            <CustomText fontType='primary' weight='Bold' style={{color:'#000', fontSize:14, fontWeight:'500'}}>Save Selected City</CustomText>
-          </TouchableOpacity> */}
-        </View>
-      {/* </View> */}
+          data={cities}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => {
+            const selected = bookingInfo.selectedCity?.id === item.id;
+            return (
+              <TouchableOpacity style={[styles.cityItem, selected && styles.cityItemSelected]} onPress={() => handleConfirm(item)}>
+                <Icon name="location-outline" size={18} color={selected ? BRAND_COLOR : '#8a8a8a'} />
+                <CustomText fontType='primary' weight={selected ? 'Medium' : 'Regular'} style={{flex:1, color: selected ? '#fff' : '#e3e3e3', fontSize:15, textTransform:'capitalize'}}>{item.name}</CustomText>
+                {selected && <Icon name="checkmark-circle" size={20} color={BRAND_COLOR} />}
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
     </ActionSheet>
   );
 }
 
 const styles = StyleSheet.create({
   modalContainer: {
-    paddingTop:24
-    // flex: 1,
-    // paddingHorizontal:16,
-    // paddingVertical:16,
-    // backgroundColor: 'rgba(0,0,0,0.5)',
-    // justifyContent: 'flex-end',
+    paddingTop: 8,
+    paddingBottom: 24,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 4,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2c2c2e',
+  },
+  closeButton: {
+    height: 32,
+    width: 32,
+    borderRadius: 16,
+    backgroundColor: '#2c2c2e',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cityItemSelected: {
+    backgroundColor: '#232326',
   },
   contentContainer: {
     flex: 1,
@@ -151,13 +179,11 @@ const styles = StyleSheet.create({
   cityItem: {
     flexDirection:'row',
     alignItems:'center',
-    gap:12,
+    gap:14,
     paddingHorizontal: 24,
     paddingVertical: 16,
-    textAlign:'left',
-    textTransform:'capitalize',
     borderBottomWidth: 1,
-    borderBottomColor: '#2c2c2e',
+    borderBottomColor: '#252528',
   },
   confirmButton: {
     backgroundColor: '#EDBF31',

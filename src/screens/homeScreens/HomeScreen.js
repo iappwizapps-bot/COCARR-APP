@@ -63,32 +63,53 @@ export default function HomeScreen() {
   }
 
   
+  // Detects the device location, resolves it to a serviced city + a readable
+  // address, and stores both. Works even before a city is picked (seeds the
+  // validation with the first available city). Updates silently so it can be
+  // used both on first open and when the locate icon is pressed.
   const detectUserLocation = async() => {
     try {
       setDetectingLocation(true)
-      let location = await getCurrentLocation();
-      let response = await axios.post(`${API_URL}/utility/validate-geo?lat=${location.latitude}&lng=${location.longitude}&cityId=${selectedCity.id}`)
-      // console.log('response', response.data)
-      const { info, city, isCityChanged, isPlaceValid } = response.data;
-      if (isCityChanged) {
-        setShowLocationSearch(false)
-        setShowCityChange({info:info,city:city});
-      } else if (!isPlaceValid) {
-        setShowLocationSearch(false)
-        setShowLocationValid(true);
-      } else {
-        dispatch(setShowCityLocation({selectedCity:city,selectedLocation: {name:response.data.info.formatted_address,place_id:response.data.info.place_id,latitude:response.data.info.geometry.location.lat,longitude:response.data.info.geometry.location.lng}}));
-        dispatch(setShowCityPicker(false));
+      const location = await getCurrentLocation();
+      let cityId = selectedCity?.id;
+      if (!cityId) {
+        const citiesRes = await axios.get(`${API_URL}/city`);
+        cityId = citiesRes.data?.[0]?.id;
       }
-      setDetectingLocation(false)
+      const response = await axios.post(`${API_URL}/utility/validate-geo?lat=${location.latitude}&lng=${location.longitude}&cityId=${cityId}`)
+      const { info, city, isPlaceValid } = response.data;
+      const detectedLocation = {
+        name: info.formatted_address,
+        place_id: info.place_id,
+        latitude: info.geometry.location.lat,
+        longitude: info.geometry.location.lng,
+      };
+      dispatch(setShowCityLocation({
+        selectedCity: isPlaceValid ? city : undefined,
+        selectedLocation: detectedLocation,
+      }));
+      dispatch(setShowCityPicker(false));
     } catch (error) {
       console.log('detecting location error',error)
-      setDetectingLocation(false)
       ToastAndroid.show('Failed to detect location', ToastAndroid.SHORT);
+    } finally {
+      setDetectingLocation(false)
     }
   }
+
+  // Auto-pick the location the first time the home screen opens (only when
+  // nothing has been selected yet, so a saved selection is preserved).
+  const didAutoDetect = useRef(false);
+  useEffect(() => {
+    if (didAutoDetect.current) return;
+    didAutoDetect.current = true;
+    if (!selectedLocation) {
+      detectUserLocation();
+    }
+  }, []);
+
   useEffect(()=>{
-    getCars()
+    if (selectedCity) getCars()
   },[selectedCity])
   
   const onRefresh = async () => {
