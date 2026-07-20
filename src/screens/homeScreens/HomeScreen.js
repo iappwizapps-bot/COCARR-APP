@@ -64,26 +64,21 @@ export default function HomeScreen() {
   }
 
   
-  // Falls back to Hyderabad when the location can't be read (e.g. permission
-  // denied), so the app always has a usable city + address.
+  // When the location can't be read (e.g. permission denied), save only the
+  // Hyderabad coordinates and show them as a fallback.
+  const HYDERABAD = { name: 'Hyderabad', latitude: '17.3850', longitude: '78.4867' };
   const applyDefaultCity = async () => {
     try {
       const citiesRes = await axios.get(`${API_URL}/city`);
-      const cities = citiesRes.data || [];
-      const hyd = cities.find(c => c.name?.toLowerCase() === 'hyderabad') || cities[0];
-      if (!hyd) return;
-      const detectedLocation = { name: hyd.name, latitude: hyd.lat, longitude: hyd.lng };
-      try {
-        const p = await axios.get(`${API_URL}/utility/get-place?lat=${hyd.lat}&long=${hyd.lng}`);
-        if (p.data) detectedLocation.name = p.data;
-      } catch (e) { /* keep city name */ }
+      const hyd = (citiesRes.data || []).find(c => c.name?.toLowerCase() === 'hyderabad');
       dispatch(setShowCityLocation({
-        selectedCity: { id: hyd.id, name: hyd.name },
-        selectedLocation: detectedLocation,
+        selectedCity: hyd ? { id: hyd.id, name: hyd.name } : undefined,
+        selectedLocation: { ...HYDERABAD, latitude: hyd?.lat || HYDERABAD.latitude, longitude: hyd?.lng || HYDERABAD.longitude },
       }));
       dispatch(setShowCityPicker(false));
     } catch (e) {
-      console.log('default city error', e);
+      // Even if the cities call fails, still save the raw Hyderabad coordinates.
+      dispatch(setShowCityLocation({ selectedLocation: { ...HYDERABAD } }));
     }
   };
 
@@ -188,13 +183,11 @@ export default function HomeScreen() {
               <View style={{paddingHorizontal:0,paddingVertical:18}}>
               <Image source={require('../../images/logo.png')} style={{width:72, height:38}}/>
             </View>
-        <TouchableOpacity style={{flexDirection:'row', alignItems:'center', gap:4,backgroundColor:'#1c1c1e',borderRadius:5,paddingVertical:8,paddingHorizontal:12,shadowOpacity:0.5,shadowRadius:1,shadowColor:'#454545',justifyContent:'center'}} onPress={()=>dispatch(setShowCityPicker(true))}>
-          <View>
-            <CustomText fontType='primary' weight='Bold' style={{color:'#959595', fontSize:10, fontWeight:'500',textAlign:'left',marginBottom:0,textTransform:'uppercase'}}>
-              {selectedCity ? selectedCity.name : 'Selected City'}
-            </CustomText>
-          </View>
-          <Icon name="location-outline" size={16} color="#a3a3a3" style={{borderRadius:50}}/>
+        <TouchableOpacity style={{flexDirection:'row', alignItems:'center', gap:4,backgroundColor:'#1c1c1e',borderRadius:5,paddingVertical:8,paddingHorizontal:12,shadowOpacity:0.5,shadowRadius:1,shadowColor:'#454545',justifyContent:'center'}} onPress={()=>setShowLocationSearch(true)}>
+          <Icon name="search-outline" size={14} color="#a3a3a3"/>
+          <CustomText fontType='primary' weight='Bold' style={{color:'#959595', fontSize:10, fontWeight:'500',textAlign:'left',marginBottom:0,textTransform:'uppercase'}}>
+            Search location
+          </CustomText>
         </TouchableOpacity>
 
       </View>

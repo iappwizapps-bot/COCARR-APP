@@ -57,9 +57,13 @@ export default function LocationSearchScreen({show,setShow,onPress}) {
   return (
     <ActionSheet defaultOverlayOpacity={0.85} ref={actionSheetRef} onClose={onClose} backgroundColor='#1c1c1e' containerStyle={{backgroundColor:'#1c1c1e',minHeight:'90%'}}>
         <View style={{paddingHorizontal:16,paddingVertical:24}}>
-        <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center',marginBottom:12}}>
-            <TextInput onChangeText={setSearch} value={search} placeholder='Search Location' style={{flex:1, backgroundColor:'#2c2c2e', padding:10, borderRadius:5,color:'#a3a3a3'}}/>
+        <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center',marginBottom:16}}>
+            <CustomText weight='Bold' style={{color:'#fff',fontSize:14,textTransform:'uppercase',letterSpacing:0.15}}>Search location</CustomText>
+            <TouchableOpacity onPress={onClose} hitSlop={{top:12,bottom:12,left:12,right:12}} style={{height:32,width:32,borderRadius:16,backgroundColor:'#2c2c2e',alignItems:'center',justifyContent:'center'}}>
+              <Icon name='close' size={18} color='#e3e3e3'/>
+            </TouchableOpacity>
         </View>
+        <TextInput onChangeText={setSearch} value={search} placeholder='Search a place or address' placeholderTextColor='#8a8a8a' autoFocus style={{backgroundColor:'#2c2c2e', padding:12, borderRadius:8,color:'#fff',marginBottom:12}}/>
         <FlatList data={locations} renderItem={({item}) => <LocationItem onPress={onPress} item={item} setShow={setShow} setSearch={setSearch}/>}/>
         </View>
     </ActionSheet>
