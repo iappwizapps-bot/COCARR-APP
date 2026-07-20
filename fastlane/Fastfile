@@ -5,10 +5,10 @@ platform :ios do
   lane :distribute do
     setup_ci if is_ci
 
-    # Build the app
+    # Build the app with automatic code signing
     build_app(
       workspace: "ios/COCARR.xcworkspace",
-      scheme: "COCARR",
+      scheme: "cocarrApp",
       configuration: "Release",
       derived_data_path: "build/DerivedData",
       destination: "generic/platform=iOS",
@@ -20,7 +20,10 @@ platform :ios do
       destination_timeout: 300,
       buildlog_path: "build/logs",
       suppress_xcode_output: false,
-      xcargs: "-allowProvisioningUpdates"
+      xcargs: "-allowProvisioningUpdates",
+      code_signing_identity: "iPhone Developer",
+      provisioning_profile_specifier: "",
+      automatic_code_signing: true
     )
 
     # Upload to Firebase App Distribution
@@ -29,10 +32,37 @@ platform :ios do
       ipa_path: "build/cocarrApp.ipa",
       service_credentials_file: ENV["FIREBASE_SERVICE_ACCOUNT_FILE"],
       release_notes: ENV["RELEASE_NOTES"] || "New build",
-      testers_file: ENV["FIREBASE_TESTERS_FILE"],
       groups: (ENV["FIREBASE_TESTER_GROUPS"] || "internal-testers").split(",")
     )
 
     UI.success("✅ Successfully built and distributed to Firebase App Distribution")
+  end
+
+  desc "Build for beta testing"
+  lane :beta do
+    setup_ci if is_ci
+
+    # Build the app with automatic code signing
+    build_app(
+      workspace: "ios/COCARR.xcworkspace",
+      scheme: "cocarrApp",
+      configuration: "Release",
+      derived_data_path: "build/DerivedData",
+      destination: "generic/platform=iOS",
+      export_method: "app-store",
+      output_directory: "build",
+      output_name: "cocarrApp.ipa",
+      skip_package_ipa: false,
+      skip_package_pkg: true,
+      destination_timeout: 300,
+      buildlog_path: "build/logs",
+      suppress_xcode_output: false,
+      xcargs: "-allowProvisioningUpdates",
+      code_signing_identity: "iPhone Developer",
+      provisioning_profile_specifier: "",
+      automatic_code_signing: true
+    )
+
+    UI.success("✅ Successfully built beta IPA")
   end
 end
