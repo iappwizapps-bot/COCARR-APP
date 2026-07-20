@@ -1,34 +1,41 @@
 {
   "project_info": {
-    "project_number": "32758101659",
-    "project_id": "cocarr-rimor",
-    "storage_bucket": "cocarr-rimor.appspot.com"
+    "project_number": "265614983806",
+    "project_id": "cocarr-front-end",
+    "storage_bucket": "cocarr-front-end.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:32758101659:android:9eaac16da5f63cd028783e",
+        "mobilesdk_app_id": "1:265614983806:android:b8903891ee64b787fcce2f",
         "android_client_info": {
-          "package_name": "com.cocarrapp"
+          "package_name": "com.iappwiz.cocarr"
         }
       },
       "oauth_client": [
         {
-          "client_id": "32758101659-ocuvlg71sh27bcq903nbvsb7osr93vvt.apps.googleusercontent.com",
+          "client_id": "265614983806-ui3v2io16io6gd7pumsp0t0j3h8ip9uj.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDC-ppZ-x1Y_nnItUZOizMihsv6JcoaMws"
+          "current_key": "AIzaSyBDIjZgdUbjEClKqH0sekIRZKznL_SryV0"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "32758101659-ocuvlg71sh27bcq903nbvsb7osr93vvt.apps.googleusercontent.com",
+              "client_id": "265614983806-ui3v2io16io6gd7pumsp0t0j3h8ip9uj.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "265614983806-ilpm00mc8437julp5usq6ktm7bko5dq2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.iappwiz.cocarr"
+              }
             }
           ]
         }

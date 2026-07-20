@@ -1,56 +1,68 @@
 default_platform(:ios)
 
-WORKSPACE        = "ios/cocarrApp.xcworkspace"
-SCHEME           = "cocarrApp"
-APP_IDENTIFIER   = "com.iappwiz.cocarr"
-FIREBASE_APP_ID  = "1:32758101659:ios:acba96f25b127d4a28783e" # from ios/cocarrApp/GoogleService-Info.plist
-
 platform :ios do
-  before_all do
-    setup_ci if ENV["CI"]
-  end
-
-  desc "Fetch signing certs/profiles from the match repo (read-only, CI-safe)"
-  lane :sync_signing do
-    match(
-      type: "adhoc",
-      app_identifier: APP_IDENTIFIER,
-      readonly: true
-    )
-  end
-
-  desc "Build the app and push it to Firebase App Distribution"
+  desc "Build and distribute to Firebase App Distribution"
   lane :distribute do
-    sync_signing
+    setup_ci if is_ci
 
-    increment_build_number(
-      xcodeproj: "ios/cocarrApp.xcodeproj",
-      build_number: ENV["GITHUB_RUN_NUMBER"] || Time.now.to_i.to_s
-    )
-
+    # Build the app with automatic code signing
     build_app(
-      workspace: WORKSPACE,
-      scheme: SCHEME,
-      export_method: "ad-hoc",
+      workspace: "ios/COCARR.xcworkspace",
+      scheme: "cocarrApp",
+      configuration: "Release",
+      derived_data_path: "build/DerivedData",
+      destination: "generic/platform=iOS",
+      export_method: "app-store",
       output_directory: "build",
       output_name: "cocarrApp.ipa",
-      export_options: {
-        provisioningProfiles: {
-          APP_IDENTIFIER => "match AdHoc #{APP_IDENTIFIER}"
-        }
-      }
+      skip_package_ipa: false,
+      skip_package_pkg: true,
+      destination_timeout: 300,
+      buildlog_path: "build/logs",
+      suppress_xcode_output: false,
+      xcargs: "-allowProvisioningUpdates",
+      code_signing_identity: "iPhone Developer",
+      provisioning_profile_specifier: "",
+      automatic_code_signing: true
     )
 
+    # Upload to Firebase App Distribution
     firebase_app_distribution(
-      app: FIREBASE_APP_ID,
-      service_credentials_file: ENV["FIREBASE_SERVICE_ACCOUNT_FILE"] || "firebase-service-account.json",
-      groups: ENV["FIREBASE_TESTER_GROUPS"] || "internal-testers",
-      release_notes: ENV["RELEASE_NOTES"] || "CI build #{ENV['GITHUB_SHA']&.slice(0, 7)} — #{Time.now.strftime('%Y-%m-%d %H:%M')}",
-      ipa_path: "build/cocarrApp.ipa"
+      app: ENV["FIREBASE_APP_ID"],
+      ipa_path: "build/cocarrApp.ipa",
+      service_credentials_file: ENV["FIREBASE_SERVICE_ACCOUNT_FILE"],
+      release_notes: ENV["RELEASE_NOTES"] || "New build",
+      groups: (ENV["FIREBASE_TESTER_GROUPS"] || "internal-testers").split(",")
     )
+
+    UI.success("✅ Successfully built and distributed to Firebase App Distribution")
   end
 
-  error do |lane, exception|
-    UI.error("Lane #{lane} failed: #{exception.message}")
+  desc "Build for beta testing"
+  lane :beta do
+    setup_ci if is_ci
+
+    # Build the app with automatic code signing
+    build_app(
+      workspace: "ios/COCARR.xcworkspace",
+      scheme: "cocarrApp",
+      configuration: "Release",
+      derived_data_path: "build/DerivedData",
+      destination: "generic/platform=iOS",
+      export_method: "app-store",
+      output_directory: "build",
+      output_name: "cocarrApp.ipa",
+      skip_package_ipa: false,
+      skip_package_pkg: true,
+      destination_timeout: 300,
+      buildlog_path: "build/logs",
+      suppress_xcode_output: false,
+      xcargs: "-allowProvisioningUpdates",
+      code_signing_identity: "iPhone Developer",
+      provisioning_profile_specifier: "",
+      automatic_code_signing: true
+    )
+
+    UI.success("✅ Successfully built beta IPA")
   end
 end

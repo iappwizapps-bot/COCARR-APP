@@ -52,7 +52,6 @@ export function CityPickerScreen() {
         try {
             const response = await axios.get(`${API_URL}/city`);
             setCities(response.data);
-            console.log('response.data', response.data)
         } catch (error) {
             console.error('Error fetching cities:', error);
         }

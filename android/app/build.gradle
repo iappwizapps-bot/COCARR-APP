@@ -83,7 +83,7 @@ android {
 
     namespace "com.cocarrapp"
     defaultConfig {
-        applicationId "com.cocarrapp"
+        applicationId "com.iappwiz.cocarr"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

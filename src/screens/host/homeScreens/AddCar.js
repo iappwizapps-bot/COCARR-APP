@@ -182,7 +182,7 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
 
       <View style={{marginTop:20}}>
         <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>Vehicle Brand</CustomText>
-        <Select options={brands} selected={carDetails.brand} onSelect={(option) => handleChange('brandId', option.id)} />
+        <Select placeholder='Select Brand' options={brands} selected={brands.find((b) => b.id === carDetails.brandId)} onSelect={(option) => handleChange('brandId', option.id)} />
       </View>
 
       <View style={{flexDirection:'column',justifyContent:'space-between',width:'100%',marginTop:20}}>
