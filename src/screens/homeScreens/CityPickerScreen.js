@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Platform, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Platform, FlatList, TextInput } from 'react-native';
 // import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Calendar } from 'react-native-calendars';
@@ -14,6 +14,7 @@ import CustomText from '../../components/CustomText';
 export function CityPickerScreen() {
   // const [selectedCity, setSelectedCity] = useState(null);
   const [cities, setCities] = useState([]);
+  const [search, setSearch] = useState('');
   const navigation = useNavigation();
   const bookingInfo = useSelector(state => state.booking);
   const dispatch = useDispatch();
@@ -51,11 +52,16 @@ export function CityPickerScreen() {
     async function fetchCities() {
         try {
             const response = await axios.get(`${API_URL}/city`);
-            setCities(response.data);
+            const list = Array.isArray(response.data) ? response.data : [];
+            setCities(list.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '')));
         } catch (error) {
             console.error('Error fetching cities:', error);
         }
     }
+
+    const filteredCities = search.trim()
+        ? cities.filter(c => (c.name || '').toLowerCase().includes(search.trim().toLowerCase()))
+        : cities;
 
   // Selecting a city also fills the location field with that city's
   // coordinates, resolved to a readable address when possible.
@@ -84,6 +90,7 @@ export function CityPickerScreen() {
   };
 
   const onClose = () => {
+    setSearch('');
     dispatch(setShowCityPicker(false));
     actionSheetRef.current.hide();
   }
@@ -106,8 +113,17 @@ export function CityPickerScreen() {
       defaultOverlayOpacity={0.75}
     >
       <View style={styles.modalContainer}>
+        <View style={{paddingHorizontal:24, paddingBottom:12}}>
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder='Search city'
+            placeholderTextColor='#8a8a8a'
+            style={{backgroundColor:'#2c2c2e', paddingHorizontal:14, paddingVertical:12, borderRadius:8, color:'#fff'}}
+          />
+        </View>
         <FlatList
-          data={cities}
+          data={filteredCities}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => {
