@@ -86,7 +86,9 @@ android {
         applicationId "com.iappwiz.cocarr"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        // Build number is injected by CI (-PcocarrVersionCode=<run number>) and
+        // increments on every develop merge; falls back to 1 for local builds.
+        versionCode project.hasProperty('cocarrVersionCode') ? project.property('cocarrVersionCode').toInteger() : 1
         versionName "1.0"
     }
     signingConfigs {
