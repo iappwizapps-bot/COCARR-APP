@@ -32,7 +32,6 @@ jobs:
     env:
       # Firebase App ID for the Android app (project cocarr-front-end). Not secret.
       FIREBASE_ANDROID_APP_ID: '1:265614983806:android:b8903891ee64b787fcce2f'
-      FIREBASE_TESTER_GROUPS: ${{ vars.FIREBASE_TESTER_GROUPS || 'internal-testers' }}
 
     steps:
       - name: Check out source
@@ -77,22 +76,17 @@ jobs:
         # versionCode is the build number, incremented on every develop merge.
         run: ./gradlew assembleRelease -PcocarrVersionCode=${{ github.run_number }} --no-daemon
 
-      - name: Write Firebase service account
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
-          test -s "$RUNNER_TEMP/firebase-sa.json"
-
       - name: Distribute to Firebase App Distribution
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
+          # firebase-tools reads FIREBASE_TOKEN automatically for auth, so no
+          # service-account file is needed here.
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           RELEASE_NOTES: ${{ inputs.release_notes || format('develop build {0} ({1})', github.run_number, github.sha) }}
         run: |
           npx --yes firebase-tools@13 appdistribution:distribute \
             android/app/build/outputs/apk/release/app-release.apk \
             --app "$FIREBASE_ANDROID_APP_ID" \
-            --groups "$FIREBASE_TESTER_GROUPS" \
+            --groups "developers" \
             --release-notes "$RELEASE_NOTES"
 
       - name: Upload APK artifact
