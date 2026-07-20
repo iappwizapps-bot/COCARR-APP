@@ -155,15 +155,14 @@ export default function HomeScreen() {
     }
   };
 
-  // Auto-pick the location the first time the home screen opens (only when
-  // nothing has been selected yet, so a saved selection is preserved).
+  // Auto-pick the current location every time the home screen opens, so the
+  // city and location reflect where the user actually is (runs once per mount,
+  // even if a previous selection is stored).
   const didAutoDetect = useRef(false);
   useEffect(() => {
     if (didAutoDetect.current) return;
     didAutoDetect.current = true;
-    if (!selectedLocation) {
-      detectUserLocation(false);
-    }
+    detectUserLocation(false);
   }, []);
 
   useEffect(()=>{
