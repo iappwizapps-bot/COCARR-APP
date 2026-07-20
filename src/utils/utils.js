@@ -1,5 +1,5 @@
 import moment from "moment";
-import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { request, PERMISSIONS, RESULTS, openSettings } from 'react-native-permissions';
 import { Platform } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import Toast from "react-native-toast-message";
@@ -55,7 +55,10 @@ export const formatDateOnly = (dateTime, type = 'short') => {
 
 
 
-export const getCurrentLocation = async () => {
+// When the permission is already blocked, the OS won't show the prompt again.
+// Pass openSettingsIfBlocked=true (i.e. the user tapped the locate icon) to
+// send them to Settings so they can enable it and try again.
+export const getCurrentLocation = async (openSettingsIfBlocked = false) => {
   try {
     let permission;
     if (Platform.OS === 'ios') {
@@ -65,6 +68,13 @@ export const getCurrentLocation = async () => {
     }
 
     const result = await request(permission);
+
+    if (result === RESULTS.BLOCKED) {
+      if (openSettingsIfBlocked) {
+        openSettings().catch(() => {});
+      }
+      throw new Error('Location permission blocked');
+    }
 
     if (result !== RESULTS.GRANTED) {
       throw new Error('Location permission not granted');
