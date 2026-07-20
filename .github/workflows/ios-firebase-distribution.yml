@@ -55,13 +55,16 @@ jobs:
 
       - name: Build & distribute via Fastlane
         env:
+          CI: 'true'
+          FASTLANE_DONT_STORE_PASSWORD: '1'
+          FASTLANE_SKIP_UPDATE_CHECK: '1'
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
           FIREBASE_SERVICE_ACCOUNT_FILE: firebase-service-account.json
           FIREBASE_TESTER_GROUPS: ${{ github.event.inputs.tester_groups || 'internal-testers' }}
           RELEASE_NOTES: ${{ github.event.inputs.release_notes || format('CI build {0}', github.sha) }}
-        run: bundle exec fastlane ios distribute
+        run: bundle exec fastlane ios distribute --non-interactive
 
       - name: Clean up secrets
         if: always()
