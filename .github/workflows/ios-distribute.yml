@@ -1,9 +1,10 @@
 name: iOS · Distribute to Firebase
 
 # Archives, signs and exports an IPA, then ships it to Firebase App Distribution
-# whenever code lands on develop (direct push or a merged PR), or on manual dispatch.
+# only when a pull request is merged into develop (or on manual dispatch).
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - develop
   workflow_dispatch:
@@ -23,6 +24,8 @@ concurrency:
 jobs:
   distribute:
     name: Build & distribute iOS
+    # Only run for a merged PR (skip PRs that are closed without merging).
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
     runs-on: macos-14
     timeout-minutes: 75
     environment: firebase-distribution
@@ -37,6 +40,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -114,16 +119,21 @@ jobs:
           echo "PROFILE_NAME=$PROFILE_NAME" >> "$GITHUB_ENV"
 
       - name: Archive (unsigned; signed at export)
+        env:
+          # Build number, incremented on every develop merge.
+          BUILD_NUMBER: ${{ github.run_number }}
         run: |
           set -euo pipefail
           # Build the archive without signing so that library/Pods targets
           # (ReactCommon, Yoga, …) don't get the app's provisioning profile
           # forced on them. The app is signed during -exportArchive instead.
+          # CURRENT_PROJECT_VERSION becomes CFBundleVersion (the build number).
           xcodebuild -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
             -configuration Release \
             -archivePath "$RUNNER_TEMP/cocarrApp.xcarchive" \
             -destination 'generic/platform=iOS' \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
             CODE_SIGNING_ALLOWED=NO \
             clean archive
 
