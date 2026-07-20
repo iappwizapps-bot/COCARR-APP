@@ -1,9 +1,10 @@
 name: Android · Distribute to Firebase
 
-# Builds a release APK and ships it to Firebase App Distribution whenever
-# code lands on develop (direct push or a merged PR), or on manual dispatch.
+# Builds a release APK and ships it to Firebase App Distribution only when a
+# pull request is merged into develop (or on manual dispatch).
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - develop
   workflow_dispatch:
@@ -23,6 +24,8 @@ concurrency:
 jobs:
   distribute:
     name: Build & distribute Android
+    # Only run for a merged PR (skip PRs that are closed without merging).
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     environment: firebase-distribution
@@ -34,6 +37,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -69,7 +74,8 @@ jobs:
           COCARR_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           COCARR_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           COCARR_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --no-daemon
+        # versionCode is the build number, incremented on every develop merge.
+        run: ./gradlew assembleRelease -PcocarrVersionCode=${{ github.run_number }} --no-daemon
 
       - name: Write Firebase service account
         env:
