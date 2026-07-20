@@ -63,14 +63,38 @@ export default function HomeScreen() {
   }
 
   
+  // Falls back to Hyderabad when the location can't be read (e.g. permission
+  // denied), so the app always has a usable city + address.
+  const applyDefaultCity = async () => {
+    try {
+      const citiesRes = await axios.get(`${API_URL}/city`);
+      const cities = citiesRes.data || [];
+      const hyd = cities.find(c => c.name?.toLowerCase() === 'hyderabad') || cities[0];
+      if (!hyd) return;
+      const detectedLocation = { name: hyd.name, latitude: hyd.lat, longitude: hyd.lng };
+      try {
+        const p = await axios.get(`${API_URL}/utility/get-place?lat=${hyd.lat}&long=${hyd.lng}`);
+        if (p.data) detectedLocation.name = p.data;
+      } catch (e) { /* keep city name */ }
+      dispatch(setShowCityLocation({
+        selectedCity: { id: hyd.id, name: hyd.name },
+        selectedLocation: detectedLocation,
+      }));
+      dispatch(setShowCityPicker(false));
+    } catch (e) {
+      console.log('default city error', e);
+    }
+  };
+
   // Detects the device location, resolves it to a serviced city + a readable
-  // address, and stores both. Works even before a city is picked (seeds the
-  // validation with the first available city). Updates silently so it can be
-  // used both on first open and when the locate icon is pressed.
-  const detectUserLocation = async() => {
+  // address (Google geocoding via the backend), and stores both. Works even
+  // before a city is picked (seeds validation with the first available city).
+  // `fromUser` is true when the locate icon is tapped, which lets us re-prompt
+  // (or open Settings) for a previously denied permission.
+  const detectUserLocation = async(fromUser = false) => {
     try {
       setDetectingLocation(true)
-      const location = await getCurrentLocation();
+      const location = await getCurrentLocation(fromUser);
       let cityId = selectedCity?.id;
       if (!cityId) {
         const citiesRes = await axios.get(`${API_URL}/city`);
@@ -91,7 +115,14 @@ export default function HomeScreen() {
       dispatch(setShowCityPicker(false));
     } catch (error) {
       console.log('detecting location error',error)
-      ToastAndroid.show('Failed to detect location', ToastAndroid.SHORT);
+      // Permission denied / location unavailable -> default to Hyderabad,
+      // but only when nothing usable is selected yet so we don't clobber a
+      // location the user already has.
+      if (!selectedLocation) {
+        await applyDefaultCity();
+      } else {
+        ToastAndroid.show('Could not update your location', ToastAndroid.SHORT);
+      }
     } finally {
       setDetectingLocation(false)
     }
@@ -104,7 +135,7 @@ export default function HomeScreen() {
     if (didAutoDetect.current) return;
     didAutoDetect.current = true;
     if (!selectedLocation) {
-      detectUserLocation();
+      detectUserLocation(false);
     }
   }, []);
 
@@ -159,7 +190,7 @@ export default function HomeScreen() {
                 </View>
                 <View>
 
-              <TouchableHighlight onPress={()=>detectUserLocation()} underlayColor='#2f2f2f' style={{flexDirection:'row',alignItems:'center', justifyContent:'flex-start',backgroundColor:'#2d2d2d',borderRadius:8,padding:2,shadowOpacity:0.5,shadowRadius:1,shadowColor:'#454545',height:40,width:40,justifyContent:'center'}}>
+              <TouchableHighlight onPress={()=>detectUserLocation(true)} underlayColor='#2f2f2f' style={{flexDirection:'row',alignItems:'center', justifyContent:'flex-start',backgroundColor:'#2d2d2d',borderRadius:8,padding:2,shadowOpacity:0.5,shadowRadius:1,shadowColor:'#454545',height:40,width:40,justifyContent:'center'}}>
                 <Icon name="locate-outline" size={20} color={BRAND_COLOR}/>
               </TouchableHighlight>
                 </View>
