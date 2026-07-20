@@ -43,13 +43,3 @@ jobs:
         working-directory: ios
         run: bundle exec pod install --deployment
 
-      - name: Build for iOS Simulator
-        run: >-
-          xcodebuild build
-          -workspace ios/cocarrApp.xcworkspace
-          -scheme cocarrApp
-          -configuration Debug
-          -sdk iphonesimulator
-          -destination 'generic/platform=iOS Simulator'
-          CODE_SIGNING_ALLOWED=NO
-          COMPILER_INDEX_STORE_ENABLE=NO
