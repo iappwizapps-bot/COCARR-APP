@@ -1,5 +1,18 @@
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
+## Continuous integration and delivery
+
+GitHub Actions validates pull requests and changes pushed to `develop`. It installs locked dependencies, runs linting and tests, builds an Android debug APK, and builds the iOS app for the simulator. The Android APK is available as a workflow artifact for 14 days.
+
+Every push to `develop` also builds a signed iOS ad-hoc IPA and distributes it to Firebase App Distribution. Before enabling this workflow, create a GitHub environment named `firebase-distribution` and add these environment secrets:
+
+- `MATCH_GIT_URL` — SSH URL of the Fastlane Match certificates repository.
+- `MATCH_GIT_PRIVATE_KEY` — deploy key with read access to that repository.
+- `MATCH_PASSWORD` — password used to encrypt the Match repository.
+- `FIREBASE_SERVICE_ACCOUNT_BASE64` — base64-encoded Firebase service-account JSON with Firebase App Distribution access.
+
+Optionally add the `FIREBASE_TESTER_GROUPS` environment variable to choose Firebase tester groups; it defaults to `internal-testers`. Configure required reviewers on the GitHub environment if releases should need approval.
+
 # Getting Started
 
 >**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
