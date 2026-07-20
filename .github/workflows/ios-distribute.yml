@@ -63,20 +63,23 @@ jobs:
           gem install cocoapods -v 1.15.2 --no-document
           pod install
 
-      - name: Import signing certificate & provisioning profile
+      - name: Import certificate & regenerate Ad Hoc profile (all devices)
         env:
           IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
-          IOS_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
+          # App Store Connect API key — lets fastlane regenerate the Ad Hoc
+          # profile with every device currently registered in the account.
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_P8 }}
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
         run: |
           set -euo pipefail
           KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
           KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
           CERT_PATH="$RUNNER_TEMP/dist-cert.p12"
-          PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
 
           echo "$IOS_DIST_CERT_P12_BASE64" | base64 -d > "$CERT_PATH"
-          echo "$IOS_PROVISION_PROFILE_BASE64" | base64 -d > "$PROFILE_PATH"
 
           # Create an ephemeral keychain and import the distribution identity
           # (certificate AND private key). Do NOT pass "-t cert": that imports
@@ -109,8 +112,32 @@ jobs:
           security find-identity -v -p codesigning "$KEYCHAIN_PATH"
           security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -qE '[1-9][0-9]* valid identities'
 
-          # Install the provisioning profile.
+          # Regenerate the Ad Hoc provisioning profile so it contains ALL devices
+          # currently registered in the Apple Developer account. Once a tester's
+          # device is registered (once), every future build includes it, so
+          # Firebase stops asking them to register on each push.
+          mkdir -p "$RUNNER_TEMP/asc"
+          cat > "$RUNNER_TEMP/asc/api_key.json" <<EOF
+          {
+            "key_id": "${ASC_KEY_ID}",
+            "issuer_id": "${ASC_ISSUER_ID}",
+            "key": "${ASC_KEY_P8_BASE64}",
+            "is_key_content_base64": true,
+            "in_house": false
+          }
+          EOF
+
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          fastlane sigh \
+            --adhoc \
+            --force \
+            --app_identifier "$BUNDLE_ID" \
+            --team_id "$IOS_TEAM_ID" \
+            --api_key_path "$RUNNER_TEMP/asc/api_key.json" \
+            --output_path "$RUNNER_TEMP" \
+            --filename cocarr_adhoc.mobileprovision
+          PROFILE_PATH="$RUNNER_TEMP/cocarr_adhoc.mobileprovision"
+
           PROFILE_UUID="$(/usr/libexec/PlistBuddy -c 'Print :UUID' /dev/stdin <<< "$(security cms -D -i "$PROFILE_PATH")")"
           cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
           PROFILE_NAME="$(/usr/libexec/PlistBuddy -c 'Print :Name' /dev/stdin <<< "$(security cms -D -i "$PROFILE_PATH")")"
