@@ -102,14 +102,16 @@ export default function HomeScreen() {
       }
       const response = await axios.post(`${API_URL}/utility/validate-geo?lat=${location.latitude}&lng=${location.longitude}&cityId=${cityId}`)
       const { info, city, isPlaceValid } = response.data;
+      // Use the device coordinates directly; fall back to the city name when
+      // reverse-geocoding (info.formatted_address) is unavailable.
       const detectedLocation = {
-        name: info.formatted_address,
-        place_id: info.place_id,
-        latitude: info.geometry.location.lat,
-        longitude: info.geometry.location.lng,
+        name: info?.formatted_address || city?.name || 'Current location',
+        place_id: info?.place_id,
+        latitude: info?.geometry?.location?.lat ?? location.latitude,
+        longitude: info?.geometry?.location?.lng ?? location.longitude,
       };
       dispatch(setShowCityLocation({
-        selectedCity: isPlaceValid ? city : undefined,
+        selectedCity: isPlaceValid && city ? city : undefined,
         selectedLocation: detectedLocation,
       }));
       dispatch(setShowCityPicker(false));
