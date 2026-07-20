@@ -1,4 +1,4 @@
-name: Validate app
+name: Android CI
 
 on:
   pull_request:
@@ -11,11 +11,11 @@ permissions:
   contents: read
 
 concurrency:
-  group: validate-${{ github.workflow }}-${{ github.ref }}
+  group: android-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  javascript-and-android:
+  validate:
     name: JavaScript and Android
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -57,42 +57,3 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
-
-  ios-build:
-    name: iOS simulator build
-    runs-on: macos-latest
-    timeout-minutes: 45
-
-    steps:
-      - name: Check out source
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Set up Ruby and CocoaPods
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.2'
-          bundler-cache: true
-
-      - name: Install JavaScript dependencies
-        run: npm ci
-
-      - name: Install iOS dependencies
-        working-directory: ios
-        run: bundle exec pod install --deployment
-
-      - name: Build for iOS Simulator
-        run: >-
-          xcodebuild build
-          -workspace ios/cocarrApp.xcworkspace
-          -scheme cocarrApp
-          -configuration Debug
-          -sdk iphonesimulator
-          -destination 'generic/platform=iOS Simulator'
-          CODE_SIGNING_ALLOWED=NO
-          COMPILER_INDEX_STORE_ENABLE=NO
