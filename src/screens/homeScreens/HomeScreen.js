@@ -11,6 +11,7 @@ import CustomText from '../../components/CustomText';
 import { setSelectedCity, setShowCityLocation, setShowCityPicker } from '../../store/bookingSlice';
 import LocationChangeNotificationScreen from './LocationChangeNotificationScreen';
 import LocationInvalidScreen from './LocationInvalidScreen';
+import LocationSearchScreen from './LocationSearchScreen';
 import Carousel from 'react-native-reanimated-carousel';
 // import Logo from '../../images/logo.png';
 // import { BottomSheet, BottomSheetView } from '@gorhom/bottom-sheet';
@@ -130,6 +131,30 @@ export default function HomeScreen() {
     }
   }
 
+  // Handles a place chosen from the Google Places search sheet: resolves it to
+  // a serviced city + coordinates and stores it as the selected location.
+  const handleLocationSelect = async (item) => {
+    try {
+      const response = await axios.post(`${API_URL}/utility/validate-place?placeId=${item.place_id}&cityId=${selectedCity?.id}`);
+      const { info, city, isPlaceValid, isCityChanged } = response.data;
+      const detectedLocation = {
+        name: info?.formatted_address || item.description,
+        place_id: item.place_id,
+        latitude: info?.geometry?.location?.lat,
+        longitude: info?.geometry?.location?.lng,
+      };
+      dispatch(setShowCityLocation({
+        selectedCity: (isPlaceValid || isCityChanged) && city ? city : undefined,
+        selectedLocation: detectedLocation,
+      }));
+    } catch (error) {
+      console.log('validate place error', error);
+      dispatch(setShowCityLocation({ selectedLocation: { name: item.description, place_id: item.place_id } }));
+    } finally {
+      setShowLocationSearch(false);
+    }
+  };
+
   // Auto-pick the location the first time the home screen opens (only when
   // nothing has been selected yet, so a saved selection is preserved).
   const didAutoDetect = useRef(false);
@@ -179,7 +204,7 @@ export default function HomeScreen() {
         <View style={{paddingHorizontal:16}}>
 
           <View style={{flexDirection:'column', borderRadius:12,borderCurve:'continuous',backgroundColor:'#1C1C1E',overflow:'hidden'}}>
-            <TouchableHighlight underlayColor='#2C2C2E' onPress={()=>navigator.navigate('DatePicker',{from:'home'})} style={{flexDirection:'row',alignItems:'center', justifyContent:'flex-start',backgroundColor:'#1C1C1E',borderBottomWidth:1,borderBottomColor:'#25252A',paddingHorizontal:16,paddingVertical:12}}>
+            <TouchableHighlight underlayColor='#2C2C2E' onPress={()=>setShowLocationSearch(true)} style={{flexDirection:'row',alignItems:'center', justifyContent:'flex-start',backgroundColor:'#1C1C1E',borderBottomWidth:1,borderBottomColor:'#25252A',paddingHorizontal:16,paddingVertical:12}}>
 
               <View style={{flexDirection:'row',justifyContent:'space-between',width:'100%',alignItems:'center'}}>
 
@@ -240,6 +265,8 @@ export default function HomeScreen() {
           <OfferSlider/>
 
           <FaqBlock/>
+
+          <LocationSearchScreen show={showLocationSearch} setShow={setShowLocationSearch} onPress={handleLocationSelect}/>
 
           {showCityChange && <LocationChangeNotificationScreen show={showCityChange} setShow={setShowCityChange} onPress={(data,city)=>{
           console.log('on click data',data)

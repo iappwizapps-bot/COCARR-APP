@@ -4,6 +4,7 @@ import axios from 'axios';
 import { API_URL, BRAND_COLOR } from '../../../utils/constants';
 import { Link, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useSelector } from 'react-redux';
 import { convertToUnixTimestamp, formatDate } from '../../../utils/utils';
 import ActionSheet from 'react-native-actions-sheet';
@@ -188,6 +189,13 @@ export function CarsInfoScreen({route}) {
 
   const isDeliveryAvailable = vehicle?.isDeliveryAvailable ?? vehicle?.vehiclePreference?.deliverAvailable ?? false;
 
+  const pickupLat = vehicle?.pickupPoint?.lat ? parseFloat(vehicle.pickupPoint.lat) : null;
+  const pickupLng = vehicle?.pickupPoint?.long ? parseFloat(vehicle.pickupPoint.long) : null;
+  const openPickupInMaps = () => {
+    if (pickupLat == null || pickupLng == null) return;
+    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${pickupLat},${pickupLng}`);
+  };
+
   return (
     <View style={styles.container}>
 
@@ -232,20 +240,27 @@ export function CarsInfoScreen({route}) {
         <Text style={styles.vehicleInfoBlockText}>{stripHtml(vehicle.description)}</Text>
       </View>
       
-      <View style={{...styles.vehicleInfoBlock,flexDirection:'row',justifyContent:'space-between',borderTopWidth:1,borderColor:'#252525'}}>
-        <View style={{flexDirection:'column',justifyContent:'center',}}>
+      <View style={{...styles.vehicleInfoBlock,borderTopWidth:1,borderColor:'#252525'}}>
+        <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
           <Text style={styles.vehicleInfoBlockTitle}>Pickup and Dropoff</Text>
-          <Text style={styles.vehicleInfoBlockText}>Open in maps</Text>
+          <TouchableOpacity onPress={openPickupInMaps}>
+            <Text style={{...styles.vehicleInfoBlockText,color:BRAND_COLOR,textDecorationLine:'underline'}}>Open in maps</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity 
-          style={{paddingVertical:12,paddingHorizontal:24,backgroundColor:'#1c1c1e',borderRadius:8,height:64,width:90,position:'relative',overflow:'hidden'}} 
-          onPress={() => {
-            const url = `https://www.google.com/maps/search/?api=1&query=${vehicle.pickupPoint.lat},${vehicle.pickupPoint.long}`;
-            Linking.openURL(url);
-          }}
-        >
-        <Image source={require('../../../images/map-bg.jpg')} style={{width:90,height:64,position:'absolute',top:0,left:0,right:0,bottom:0,zIndex:1000,opacity:0.35}}/>
-        </TouchableOpacity>
+        {pickupLat != null && pickupLng != null ? (
+          <TouchableOpacity activeOpacity={0.9} onPress={openPickupInMaps} style={{marginTop:12,borderRadius:10,overflow:'hidden',height:160}}>
+            <MapView
+              style={{flex:1}}
+              pointerEvents="none"
+              provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+              initialRegion={{ latitude: pickupLat, longitude: pickupLng, latitudeDelta: 0.02, longitudeDelta: 0.02 }}
+            >
+              <Marker coordinate={{ latitude: pickupLat, longitude: pickupLng }} />
+            </MapView>
+          </TouchableOpacity>
+        ) : (
+          <Image source={require('../../../images/map-bg.jpg')} style={{width:'100%',height:120,borderRadius:10,marginTop:12,opacity:0.4}}/>
+        )}
       </View>
       
       
