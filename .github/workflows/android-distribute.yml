@@ -1,0 +1,98 @@
+name: Android · Distribute to Firebase
+
+# Builds a release APK and ships it to Firebase App Distribution whenever
+# code lands on develop (direct push or a merged PR), or on manual dispatch.
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: Notes shown to Firebase testers
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-distribute-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  distribute:
+    name: Build & distribute Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: firebase-distribution
+    env:
+      # Firebase App ID for the Android app (project cocarr-front-end). Not secret.
+      FIREBASE_ANDROID_APP_ID: '1:265614983806:android:b8903891ee64b787fcce2f'
+      FIREBASE_TESTER_GROUPS: ${{ vars.FIREBASE_TESTER_GROUPS || 'internal-testers' }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Decode release keystore (optional)
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+            echo "Using provided release keystore."
+          else
+            echo "No ANDROID_KEYSTORE_BASE64 secret set — release APK will be debug-signed (still installable)."
+          fi
+
+      - name: Build release APK
+        working-directory: android
+        env:
+          COCARR_UPLOAD_STORE_FILE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
+          COCARR_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          COCARR_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          COCARR_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Write Firebase service account
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+          test -s "$RUNNER_TEMP/firebase-sa.json"
+
+      - name: Distribute to Firebase App Distribution
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
+          RELEASE_NOTES: ${{ inputs.release_notes || format('develop build {0} ({1})', github.run_number, github.sha) }}
+        run: |
+          npx --yes firebase-tools@13 appdistribution:distribute \
+            android/app/build/outputs/apk/release/app-release.apk \
+            --app "$FIREBASE_ANDROID_APP_ID" \
+            --groups "$FIREBASE_TESTER_GROUPS" \
+            --release-notes "$RELEASE_NOTES"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cocarr-android-release-${{ github.run_number }}
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 14

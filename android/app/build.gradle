@@ -96,15 +96,25 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            // Populated in CI from COCARR_UPLOAD_* env vars (see .github/workflows/android-distribute.yml).
+            // Falls back to debug signing below when no release keystore is provided.
+            if (System.getenv('COCARR_UPLOAD_STORE_FILE')) {
+                storeFile file(System.getenv('COCARR_UPLOAD_STORE_FILE'))
+                storePassword System.getenv('COCARR_UPLOAD_STORE_PASSWORD')
+                keyAlias System.getenv('COCARR_UPLOAD_KEY_ALIAS')
+                keyPassword System.getenv('COCARR_UPLOAD_KEY_PASSWORD')
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // Use the release keystore when provided via COCARR_UPLOAD_* env vars,
+            // otherwise fall back to debug signing (still installable for Firebase testers).
+            signingConfig System.getenv('COCARR_UPLOAD_STORE_FILE') ? signingConfigs.release : signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
