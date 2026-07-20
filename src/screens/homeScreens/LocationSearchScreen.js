@@ -40,7 +40,7 @@ export default function LocationSearchScreen({show,setShow,onPress}) {
   const onSearch = async() => {
     try {
       if(search.length > 2){
-        const response = await axios.get(`${API_URL}/utility/autocomplete?search=${search}&cityId=${booking.selectedCity.id}`)
+        const response = await axios.get(`${API_URL}/utility/autocomplete?search=${search}&cityId=${booking.selectedCity?.id || ''}`)
         console.log(response.data)
         setLocations(response.data)
       }
