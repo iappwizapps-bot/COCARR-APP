@@ -169,7 +169,7 @@ jobs:
           npx --yes firebase-tools@13 appdistribution:distribute \
             "$IPA_PATH" \
             --app "$FIREBASE_IOS_APP_ID" \
-            --groups "$FIREBASE_TESTER_GROUPS" \
+            --groups "developers" \
             --release-notes "$RELEASE_NOTES"
 
       - name: Upload IPA artifact
