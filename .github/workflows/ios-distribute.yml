@@ -57,10 +57,13 @@ jobs:
       - name: Install JavaScript dependencies
         run: npm ci
 
-      - name: Install CocoaPods
+      - name: Install CocoaPods & fastlane
         working-directory: ios
         run: |
           gem install cocoapods -v 1.15.2 --no-document
+          # setup-ruby drops the Homebrew gem path (which has the preinstalled
+          # fastlane) from PATH, so install fastlane into the active Ruby.
+          gem install fastlane --no-document
           pod install
 
       - name: Import certificate & regenerate Ad Hoc profile (all devices)
