@@ -1,9 +1,11 @@
 name: Distribute iOS to Firebase
 
 on:
-  push:
-    branches:
-      - develop
+  workflow_run:
+    workflows:
+      - iOS CI
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       release_notes:
@@ -15,12 +17,17 @@ permissions:
   contents: read
 
 concurrency:
-  group: ios-firebase-distribution-develop
+  group: ios-firebase-distribution-${{ github.event.workflow_run.head_sha || github.run_id }}
   cancel-in-progress: false
 
 jobs:
   distribute:
     name: Build and distribute
+    if: >-
+      (github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'develop') ||
+      github.event_name == 'workflow_dispatch'
     runs-on: macos-latest
     timeout-minutes: 60
     environment: firebase-distribution
@@ -28,6 +35,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -67,7 +76,7 @@ jobs:
           APP_IDENTIFIER: com.iappwiz.cocarr
           FIREBASE_SERVICE_ACCOUNT_FILE: ${{ runner.temp }}/firebase-service-account.json
           FIREBASE_TESTER_GROUPS: ${{ vars.FIREBASE_TESTER_GROUPS || 'internal-testers' }}
-          RELEASE_NOTES: ${{ inputs.release_notes || format('Build {0} ({1})', github.run_number, github.sha) }}
+          RELEASE_NOTES: ${{ inputs.release_notes || format('Build {0} ({1})', github.run_number, github.event.workflow_run.head_sha || github.sha) }}
         run: bundle exec fastlane ios distribute --non-interactive
 
       - name: Upload IPA

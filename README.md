@@ -4,7 +4,7 @@ This is a new [**React Native**](https://reactnative.dev) project, bootstrapped 
 
 GitHub Actions validates pull requests and changes pushed to `develop`. It installs locked dependencies, runs linting and tests, builds an Android debug APK, and builds the iOS app for the simulator. The Android APK is available as a workflow artifact for 14 days.
 
-Every push to `develop` also builds a signed iOS IPA and distributes it to Firebase App Distribution. Before enabling this workflow, create a GitHub environment named `firebase-distribution` and add these environment secrets:
+When a push to `develop` passes the `iOS CI` workflow, GitHub builds that exact commit as a signed iOS IPA and distributes it to Firebase App Distribution. Before enabling this workflow, create a GitHub environment named `firebase-distribution` and add these environment secrets:
 
 - `FIREBASE_SERVICE_ACCOUNT_BASE64` — base64-encoded Firebase service-account JSON with Firebase App Distribution access.
 - `FIREBASE_APP_ID` — Firebase App Distribution iOS app ID.
