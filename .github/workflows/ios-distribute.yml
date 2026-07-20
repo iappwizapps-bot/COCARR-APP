@@ -44,18 +44,19 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Set up Ruby and CocoaPods
+      - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
-          bundler-cache: true
 
       - name: Install JavaScript dependencies
         run: npm ci
 
       - name: Install CocoaPods
         working-directory: ios
-        run: bundle exec pod install
+        run: |
+          gem install cocoapods -v 1.15.2 --no-document
+          pod install
 
       - name: Import signing certificate & provisioning profile
         env:
