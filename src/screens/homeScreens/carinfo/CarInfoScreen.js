@@ -186,6 +186,8 @@ export function CarsInfoScreen({route}) {
     }
   };
 
+  const isDeliveryAvailable = vehicle?.isDeliveryAvailable ?? vehicle?.vehiclePreference?.deliverAvailable ?? false;
+
   return (
     <View style={styles.container}>
 
@@ -201,6 +203,29 @@ export function CarsInfoScreen({route}) {
 
       <CarImageBlock vehicle={vehicle} />
 
+
+      <View style={styles.vehicleInfoBlock}>
+        <Text style={styles.vehicleInfoBlockTitle}>Delivery Option</Text>
+        <View style={{flexDirection:'row',gap:12,marginTop:10}}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setDeliveryType('self')}
+            style={{flex:1,paddingVertical:14,borderRadius:8,borderWidth:1,alignItems:'center',borderColor: deliveryType==='self' ? BRAND_COLOR : '#252525', backgroundColor: deliveryType==='self' ? '#EDBF3113' : '#1c1c1e'}}
+          >
+            <Text style={{color: deliveryType==='self' ? BRAND_COLOR : '#fff', fontWeight:'600', fontSize:13}}>Self Pickup</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            disabled={!isDeliveryAvailable}
+            onPress={() => isDeliveryAvailable && setDeliveryType('driver')}
+            style={{flex:1,paddingVertical:14,borderRadius:8,borderWidth:1,alignItems:'center',opacity: isDeliveryAvailable ? 1 : 0.45, borderColor: deliveryType==='driver' ? BRAND_COLOR : '#252525', backgroundColor: deliveryType==='driver' ? '#EDBF3113' : '#1c1c1e'}}
+          >
+            <Text style={{color: deliveryType==='driver' ? BRAND_COLOR : '#fff', fontWeight:'600', fontSize:13}}>
+              {isDeliveryAvailable ? 'Doorstep Delivery' : 'Delivery Unavailable'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       <View style={styles.vehicleInfoBlock}>
         <Text style={styles.vehicleInfoBlockTitle}>About the Car</Text>
@@ -282,9 +307,9 @@ export function CarsInfoScreen({route}) {
         {vehicleSummary ? <View style={{flexDirection:'column',justifyContent:'center'}}>
        
         <Text style={{color:'#efefef',fontSize:15,fontWeight:'500'}}>{vehicle.isAvailable ? `Rs.${selectedOffer ? getTotalAmount() - parseFloat(selectedOffer.offerAmount) : getTotalAmount()}` : 'Sold Out'}</Text>
-        {vehicle.isAvailable ? <View onPress={() => actionRef.current.show()}>
-        <Text style={styles.priceButtonText}>(Including Tax) </Text>
-        </View> : null}
+        {vehicle.isAvailable ? <TouchableOpacity activeOpacity={0.7} onPress={() => actionRef.current && actionRef.current.show()}>
+        <Text style={{...styles.priceButtonText, color:'#EDBF31', textDecorationLine:'underline'}}>View price breakup</Text>
+        </TouchableOpacity> : null}
         </View> : <ActivityIndicator color="#EDBF31" size="small"/>}
         
         <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
@@ -301,6 +326,7 @@ export function CarsInfoScreen({route}) {
         </View>
       </View>
       </View>
+          <FilterModal actionRef={actionRef} vehicleSummary={vehicleSummary} selectedOffer={selectedOffer} deliveryType={deliveryType} vehicle={vehicle} />
           {showPaymentResult ? <PaymentResultPopup response={showPaymentResult} /> : null}
     </View>
   );
@@ -322,7 +348,7 @@ const PaymentResultPopup = ({response}) => {
 
 
 
-const FilterModal = ({actionRef,vehicleSummary,selectedOffer,deliveryType}) => {
+const FilterModal = ({actionRef,vehicleSummary,selectedOffer,deliveryType,vehicle}) => {
   return (
     <View>
       <ActionSheet ref={actionRef} containerStyle={{backgroundColor:'#1C1C1E'}} overlayColor='#000' defaultOverlayOpacity={0.85}>
@@ -333,17 +359,17 @@ const FilterModal = ({actionRef,vehicleSummary,selectedOffer,deliveryType}) => {
                   <Text style={styles.summaryText}>Rs.{vehicleSummary?.rideAmount?.amount}</Text>
                 </View>
                 <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-                  <Text style={styles.summaryText}>Refundable Deposit</Text>
-                  <Text style={styles.summaryText}>Rs.{vehicleSummary?.deposit?.amount}</Text>
-                </View>
-                <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
                   <Text style={styles.summaryText}>Convenience Fee</Text>
                   <Text style={styles.summaryText}>Rs.{vehicleSummary?.convenienceFee?.amount}</Text>
                 </View>
-                { deliveryType === 'self' ? <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
+                { deliveryType === 'driver' ? <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
                   <Text style={styles.summaryText}>Delivery Fee</Text>
                   <Text style={styles.summaryText}>Rs.{vehicleSummary?.driverFee?.amount}</Text>
                 </View> : null}
+                <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
+                  <Text style={styles.summaryText}>Refundable Deposit</Text>
+                  <Text style={styles.summaryText}>Rs.{vehicle?.deposit ?? vehicleSummary?.deposit?.amount ?? '-'}</Text>
+                </View>
                 {selectedOffer ? <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
                   <Text style={styles.summaryText}>Offer Discount</Text>
                   <Text style={{...styles.summaryText,color:'#00ff00'}}>-Rs.{selectedOffer?.offerAmount}</Text>
