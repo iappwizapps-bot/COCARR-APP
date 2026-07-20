@@ -1,161 +1,151 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Platform, FlatList, TextInput } from 'react-native';
-// import DateTimePicker from '@react-native-community/datetimepicker';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, TouchableOpacity, Modal, TextInput, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { Calendar } from 'react-native-calendars';
-import { useNavigation, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { setSelectedCity  as setSelectedCityAction, setShowCityPicker, setShowCityLocation} from '../../store/bookingSlice';
+import { setShowCityPicker, setShowCityLocation } from '../../store/bookingSlice';
 import axios from 'axios';
 import { API_URL, BRAND_COLOR } from '../../utils/constants';
-import ActionSheet, { ScrollView } from 'react-native-actions-sheet';
 import CustomText from '../../components/CustomText';
 
+// Centered modal city picker, mirroring the web city-selection modal:
+// a header with a dismiss (X) button, a search box, and an alphabetical
+// list of serviced cities with a check on the selected one.
 export function CityPickerScreen() {
-  // const [selectedCity, setSelectedCity] = useState(null);
   const [cities, setCities] = useState([]);
   const [search, setSearch] = useState('');
-  const navigation = useNavigation();
-  const bookingInfo = useSelector(state => state.booking);
+  const bookingInfo = useSelector((state) => state.booking);
   const dispatch = useDispatch();
-  const actionSheetRef = useRef(null);
-    useEffect(() => {
 
-        // navigation.setOptions({
-        //     headerShown: true,
-        //     headerTitle: 'Select City',
-        //     headerTitleAlign: 'center',
-        //     headerTitleStyle: {
-        //       color: '#e3e3e3',
-        //       fontSize: 13,
-        //       fontWeight: '500',
-        //     },
-        //     headerLeft: () => <TouchableOpacity onPress={() => navigation.goBack()}><Icon name="chevron-back" size={20} color="#a3a3a3" /></TouchableOpacity>,
-        //     headerStyle: {
-        //       backgroundColor: '#000',
-        //     },
-        //     headerTintColor: '#fff',
-        //   })
+  useEffect(() => {
+    fetchCities();
+  }, []);
 
-        fetchCities();
-    }, []);
-
-    useEffect(() => {
-        if (bookingInfo.showCityPicker) {
-            actionSheetRef.current.show();
-        }
-        // else {
-        //     actionSheetRef.current.hide();
-        // }
-    }, [bookingInfo.showCityPicker]);
-
-    async function fetchCities() {
-        try {
-            const response = await axios.get(`${API_URL}/city`);
-            const list = Array.isArray(response.data) ? response.data : [];
-            setCities(list.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '')));
-        } catch (error) {
-            console.error('Error fetching cities:', error);
-        }
+  async function fetchCities() {
+    try {
+      const response = await axios.get(`${API_URL}/city`);
+      const list = Array.isArray(response.data) ? response.data : [];
+      setCities(list.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '')));
+    } catch (error) {
+      console.error('Error fetching cities:', error);
     }
+  }
 
-    const filteredCities = search.trim()
-        ? cities.filter(c => (c.name || '').toLowerCase().includes(search.trim().toLowerCase()))
-        : cities;
+  const filteredCities = search.trim()
+    ? cities.filter((c) => (c.name || '').toLowerCase().includes(search.trim().toLowerCase()))
+    : cities;
 
-  // Selecting a city also fills the location field with that city's
-  // coordinates, resolved to a readable address when possible.
+  // Selecting a city fills both the city and the location (= city coordinates,
+  // resolved to a readable address when possible).
   const handleConfirm = async (item) => {
-        try {
-            const detectedLocation = {
-                name: item.name,
-                latitude: item.lat,
-                longitude: item.lng,
-            };
-            try {
-                const res = await axios.get(`${API_URL}/utility/get-place?lat=${item.lat}&long=${item.lng}`);
-                if (res.data) detectedLocation.name = res.data;
-            } catch (e) {
-                // fall back to the city name
-            }
-            dispatch(setShowCityLocation({
-                selectedCity: { id: item.id, name: item.name },
-                selectedLocation: detectedLocation,
-            }));
-            dispatch(setShowCityPicker(false));
-            actionSheetRef.current.hide();
-        } catch (error) {
-            console.error('Error confirming city selection:', error);
-        }
+    try {
+      const detectedLocation = { name: item.name, latitude: item.lat, longitude: item.lng };
+      try {
+        const res = await axios.get(`${API_URL}/utility/get-place?lat=${item.lat}&long=${item.lng}`);
+        if (res.data) detectedLocation.name = res.data;
+      } catch (e) {
+        // fall back to the city name
+      }
+      dispatch(setShowCityLocation({
+        selectedCity: { id: item.id, name: item.name },
+        selectedLocation: detectedLocation,
+      }));
+      onClose();
+    } catch (error) {
+      console.error('Error confirming city selection:', error);
+    }
   };
 
   const onClose = () => {
     setSearch('');
     dispatch(setShowCityPicker(false));
-    actionSheetRef.current.hide();
-  }
+  };
 
   return (
-    <ActionSheet
-      CustomHeaderComponent={
-        <View style={styles.sheetHeader}>
-          <CustomText fontType='primary' weight='Bold' style={{color:'#fff', fontSize:14, fontWeight:'500',textTransform:'uppercase',letterSpacing:.15,fontFamily:'Inter-Bold'}}>Select City</CustomText>
-          <TouchableOpacity onPress={onClose} hitSlop={{top:12,bottom:12,left:12,right:12}} style={styles.closeButton}>
-            <Icon name="close" size={20} color="#e3e3e3" />
-          </TouchableOpacity>
-        </View>
-      }
-      ref={actionSheetRef}
-      containerStyle={{backgroundColor:'#1c1c1e',minHeight:'70%'}}
-      isModal={true}
-      isVisible={true}
-      onClose={onClose}
-      defaultOverlayOpacity={0.75}
+    <Modal
+      visible={!!bookingInfo.showCityPicker}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      statusBarTranslucent
     >
-      <View style={styles.modalContainer}>
-        <View style={{paddingHorizontal:24, paddingBottom:12}}>
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder='Search city'
-            placeholderTextColor='#8a8a8a'
-            style={{backgroundColor:'#2c2c2e', paddingHorizontal:14, paddingVertical:12, borderRadius:8, color:'#fff'}}
+      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
+        <TouchableOpacity style={styles.card} activeOpacity={1} onPress={() => {}}>
+          <View style={styles.header}>
+            <CustomText fontType="primary" weight="Bold" style={styles.title}>Select city</CustomText>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} style={styles.closeButton}>
+              <Icon name="close" size={18} color="#e3e3e3" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.searchBox}>
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search city"
+              placeholderTextColor="#8a8a8a"
+              style={styles.searchInput}
+            />
+          </View>
+
+          <FlatList
+            data={filteredCities}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={
+              <CustomText fontType="primary" weight="Regular" style={styles.empty}>No matching city</CustomText>
+            }
+            renderItem={({ item }) => {
+              const selected = bookingInfo.selectedCity?.id === item.id;
+              return (
+                <TouchableOpacity style={[styles.cityItem, selected && styles.cityItemSelected]} onPress={() => handleConfirm(item)}>
+                  <Icon name="location-outline" size={18} color={selected ? BRAND_COLOR : '#8a8a8a'} />
+                  <CustomText fontType="primary" weight={selected ? 'Medium' : 'Regular'} style={{ flex: 1, color: selected ? '#fff' : '#e3e3e3', fontSize: 15, textTransform: 'capitalize' }}>{item.name}</CustomText>
+                  {selected && <Icon name="checkmark-circle" size={20} color={BRAND_COLOR} />}
+                </TouchableOpacity>
+              );
+            }}
           />
-        </View>
-        <FlatList
-          data={filteredCities}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => {
-            const selected = bookingInfo.selectedCity?.id === item.id;
-            return (
-              <TouchableOpacity style={[styles.cityItem, selected && styles.cityItemSelected]} onPress={() => handleConfirm(item)}>
-                <Icon name="location-outline" size={18} color={selected ? BRAND_COLOR : '#8a8a8a'} />
-                <CustomText fontType='primary' weight={selected ? 'Medium' : 'Regular'} style={{flex:1, color: selected ? '#fff' : '#e3e3e3', fontSize:15, textTransform:'capitalize'}}>{item.name}</CustomText>
-                {selected && <Icon name="checkmark-circle" size={20} color={BRAND_COLOR} />}
-              </TouchableOpacity>
-            );
-          }}
-        />
-      </View>
-    </ActionSheet>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  modalContainer: {
-    paddingTop: 8,
-    paddingBottom: 24,
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.72)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
-  sheetHeader: {
+  card: {
+    width: '100%',
+    maxWidth: 440,
+    maxHeight: '72%',
+    backgroundColor: '#1c1c1e',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2c2c2e',
+    overflow: 'hidden',
+    paddingBottom: 12,
+  },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 4,
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#2c2c2e',
+  },
+  title: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   closeButton: {
     height: 32,
@@ -165,55 +155,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cityItemSelected: {
-    backgroundColor: '#232326',
+  searchBox: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 6,
   },
-  contentContainer: {
-    flex: 1,
-    // height:'100%',
-    paddingHorizontal:24,
-    paddingVertical:24
-  },
-  modalContent: {
-    // backgroundColor: '#000',
-    height: '100%',
-    flex: 1,
-    paddingHorizontal:24,
-    paddingVertical:24
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerText: {
-    fontSize: 18,
-    fontWeight: '600',
+  searchInput: {
+    backgroundColor: '#2c2c2e',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 8,
     color: '#fff',
   },
   cityItem: {
-    flexDirection:'row',
-    alignItems:'center',
-    gap:14,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#252528',
   },
-  confirmButton: {
-    backgroundColor: '#EDBF31',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
+  cityItemSelected: {
+    backgroundColor: '#232326',
   },
-  confirmButtonDisabled: {
-    backgroundColor: '#4C4C4E',
-  },
-  confirmButtonText: {
-    color: '#000',
+  empty: {
+    color: '#8a8a8a',
     fontSize: 14,
-    fontWeight: '500',
+    paddingHorizontal: 20,
+    paddingVertical: 18,
   },
 });
-
