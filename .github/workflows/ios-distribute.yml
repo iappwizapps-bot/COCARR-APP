@@ -73,14 +73,21 @@ jobs:
           echo "$IOS_DIST_CERT_P12_BASE64" | base64 -d > "$CERT_PATH"
           echo "$IOS_PROVISION_PROFILE_BASE64" | base64 -d > "$PROFILE_PATH"
 
-          # Create an ephemeral keychain and import the distribution certificate.
+          # Create an ephemeral keychain and import the distribution identity
+          # (certificate AND private key). Do NOT pass "-t cert": that imports
+          # only the certificate and drops the private key, which makes export
+          # fail with "No signing certificate ... with a private key".
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security import "$CERT_PATH" -P "$IOS_DIST_CERT_PASSWORD" \
-            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+            -A -f pkcs12 -k "$KEYCHAIN_PATH" \
+            -T /usr/bin/codesign -T /usr/bin/xcodebuild
           security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" >/dev/null
           security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain-db
+
+          # Sanity check: confirm a code-signing identity is actually usable.
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
 
           # Install the provisioning profile.
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
@@ -134,16 +141,11 @@ jobs:
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
             -exportPath "$RUNNER_TEMP/export"
 
-      - name: Write Firebase service account
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
-          test -s "$RUNNER_TEMP/firebase-sa.json"
-
       - name: Distribute to Firebase App Distribution
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
+          # firebase-tools reads FIREBASE_TOKEN automatically for auth, so no
+          # service-account file is needed here.
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           RELEASE_NOTES: ${{ inputs.release_notes || format('develop build {0} ({1})', github.run_number, github.sha) }}
         run: |
           set -euo pipefail
