@@ -7,7 +7,7 @@ platform :ios do
 
     # Build the app with automatic code signing
     build_app(
-      workspace: "ios/COCARR.xcworkspace",
+      workspace: "ios/cocarrApp.xcworkspace",
       scheme: "cocarrApp",
       configuration: "Release",
       derived_data_path: "build/DerivedData",
@@ -44,7 +44,7 @@ platform :ios do
 
     # Build the app with automatic code signing
     build_app(
-      workspace: "ios/COCARR.xcworkspace",
+      workspace: "ios/cocarrApp.xcworkspace",
       scheme: "cocarrApp",
       configuration: "Release",
       derived_data_path: "build/DerivedData",
