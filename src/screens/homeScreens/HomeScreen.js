@@ -183,11 +183,11 @@ export default function HomeScreen() {
               <View style={{paddingHorizontal:0,paddingVertical:18}}>
               <Image source={require('../../images/logo.png')} style={{width:72, height:38}}/>
             </View>
-        <TouchableOpacity style={{flexDirection:'row', alignItems:'center', gap:4,backgroundColor:'#1c1c1e',borderRadius:5,paddingVertical:8,paddingHorizontal:12,shadowOpacity:0.5,shadowRadius:1,shadowColor:'#454545',justifyContent:'center'}} onPress={()=>setShowLocationSearch(true)}>
-          <Icon name="search-outline" size={14} color="#a3a3a3"/>
+        <TouchableOpacity style={{flexDirection:'row', alignItems:'center', gap:4,backgroundColor:'#1c1c1e',borderRadius:5,paddingVertical:8,paddingHorizontal:12,shadowOpacity:0.5,shadowRadius:1,shadowColor:'#454545',justifyContent:'center'}} onPress={()=>dispatch(setShowCityPicker(true))}>
           <CustomText fontType='primary' weight='Bold' style={{color:'#959595', fontSize:10, fontWeight:'500',textAlign:'left',marginBottom:0,textTransform:'uppercase'}}>
-            Search location
+            {selectedCity ? selectedCity.name : 'Select City'}
           </CustomText>
+          <Icon name="location-outline" size={14} color="#a3a3a3"/>
         </TouchableOpacity>
 
       </View>
