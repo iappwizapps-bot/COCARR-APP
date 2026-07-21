@@ -147,6 +147,15 @@ export function DatePickerScreen({ visible, onClose, onSelect }) {
     }
   };
 
+  // Minimum booking window (hours). Picking a start time auto-selects the end.
+  const MIN_BOOKING_HOURS = 12;
+  const onSelectStartTime = (value) => {
+    setStartTime(value);
+    const end = new Date(new Date(value).getTime() + MIN_BOOKING_HOURS * 60 * 60 * 1000);
+    setEndDate(end);
+    setEndTime(end.toISOString());
+  };
+
   const handleConfirm = () => {
     // Combine dates and times
     const startDateTime = new Date(startDate);
@@ -372,7 +381,7 @@ export function DatePickerScreen({ visible, onClose, onSelect }) {
               // style={{}}
               // snapToOffsets={[...Array(startTimeSlots.length).fill(100)]}
               renderItem={({ item }) => (
-                <TouchableOpacity onPress={() => setStartTime(item.value)} style={{backgroundColor: item.value === startTime ? '#EDBF311e' : '#1c1c1e',borderRadius: 24,marginHorizontal: 5}}>
+                <TouchableOpacity onPress={() => onSelectStartTime(item.value)} style={{backgroundColor: item.value === startTime ? '#EDBF311e' : '#1c1c1e',borderRadius: 24,marginHorizontal: 5}}>
                   <CustomText weight='Medium' style={[
                     styles.timeSlot,
                     item.value === startTime && styles.selectedTimeSlot
