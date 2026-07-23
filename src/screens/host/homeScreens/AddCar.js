@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Image, Switch, ToastAndroid, TouchableHighlight, ActivityIndicator, ScrollView, } from 'react-native';
+import { View, Text, Button, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Image, Switch, ToastAndroid, TouchableHighlight, ActivityIndicator, ScrollView, Platform, Alert, } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { API_URL, BRAND_COLOR } from '../../../utils/constants';
@@ -8,9 +8,49 @@ import Select from '../../../components/Select';
 import axios from 'axios';
 import { launchImageLibrary } from 'react-native-image-picker';
 import MapView, { Circle, Marker } from 'react-native-maps';
-import { getCurrentLocation, UnauthAxios } from '../../../utils/utils';
+import { getCurrentLocation, photoUrl, UnauthAxios } from '../../../utils/utils';
 import LocationInvalidScreen from '../../homeScreens/LocationInvalidScreen';
 
+
+// ToastAndroid is Android-only — calling it on iOS throws, which was killing
+// every error path in this flow (including the brand/city fetch failures).
+const notify = (message) => {
+  if (!message) return;
+  if (Platform.OS === 'android') ToastAndroid.show(message, ToastAndroid.SHORT);
+  else Alert.alert('', message);
+};
+
+// The list endpoints normally return a bare array, but tolerate the wrapped
+// shapes too so a picker never silently ends up empty.
+const asList = (payload, ...keys) => {
+  if (Array.isArray(payload)) return payload;
+  for (const key of [...keys, 'data', 'rows']) {
+    if (Array.isArray(payload?.[key])) return payload[key];
+  }
+  return [];
+};
+
+const apiError = (error, fallback) =>
+  error?.response?.data?.error || error?.response?.data?.message || error?.message || fallback;
+
+const TOTAL_STEPS = 6;
+const STEP_LABELS = {
+  1: 'Step 1: Car Details',
+  2: 'Step 2: Car Images',
+  3: 'Step 3: Pickup Point',
+  4: 'Step 4: Preferences',
+  5: 'Step 5: Pricing',
+  6: 'Step 6: Review & Host',
+};
+
+// Thin progress bar under the header so the host can see how far along they are.
+const StepProgress = ({ step }) => (
+  <View style={{flexDirection:'row',gap:4,paddingHorizontal:16,paddingBottom:10,backgroundColor:'#000'}}>
+    {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+      <View key={i} style={{flex:1,height:3,borderRadius:2,backgroundColor: i < step ? BRAND_COLOR : '#2c2e2a'}} />
+    ))}
+  </View>
+);
 
 const AddCar = ({route}) => {
   const navigation = useNavigation();
@@ -44,11 +84,13 @@ const AddCar = ({route}) => {
     }
   };
 
+  // Functional update — the previous spread closed over a stale `data`, so two
+  // handleChange calls in the same tick (e.g. city id + city name) lost one.
   const handleChange = (name, value) => {
-    setData({
-      ...data,
+    setData((prev) => ({
+      ...prev,
       [name]: value,
-    });
+    }));
   };
 
   const getCarInfo = async () => {
@@ -57,6 +99,16 @@ const AddCar = ({route}) => {
       if(vehicleId){
         const response = await axios.get(`${API_URL}/host/vehicles/${vehicleId}`)
         setCarInfo(response.data)
+        // Prefill so going back to an earlier step shows the saved values.
+        setData((prev) => ({
+          ...prev,
+          vehicleId,
+          vehicleName: response.data.vehicleName || prev.vehicleName,
+          model: response.data.model || prev.model,
+          vehicleNumber: response.data.vehicleNumber || prev.vehicleNumber,
+          brandId: response.data.vehicleBrand || prev.brandId,
+          brandName: response.data.brand?.name || prev.brandName,
+        }));
         console.log('res',response.data.isImagesUploaded)
         if(response.data.isImagesUploaded === undefined || response.data.isImagesUploaded === false){
           console.log('step 2')
@@ -76,7 +128,7 @@ const AddCar = ({route}) => {
     } catch (error) {
       setLoading(false);
       console.error('Error fetching car details:', error.message)
-      ToastAndroid.show('Error fetching car details', ToastAndroid.SHORT);
+      notify(apiError(error, 'Error fetching car details'));
     }
   }
   useEffect(() => {
@@ -94,7 +146,9 @@ const AddCar = ({route}) => {
       case 4:
         return <Step4 carDetails={data} handleChange={handleChange} handleNext={handleNext} navigation={navigation}/>;
       case 5:
-        return <Step5 carDetails={data} handleChange={handleChange} navigation={navigation} />;
+        return <Step5 carDetails={data} handleChange={handleChange} handleNext={handleNext} />;
+      case 6:
+        return <Step6 carDetails={data} navigation={navigation} />;
       default:
         return null;
     }
@@ -112,7 +166,7 @@ const AddCar = ({route}) => {
             </TouchableOpacity>
             <View style={{flexDirection:'column',justifyContent:'center',alignItems:'center'}}>
                 <CustomText fontType='primary' weight='SemiBold' style={{color:'#a3a3a3', fontSize:12,textTransform:'uppercase',letterSpacing:.15}}>Add Car</CustomText>
-                <CustomText fontType='primary' weight='Regular' style={{color:'#a3a3a3', fontSize:11,letterSpacing:.15}}>{step === 1 ? 'Step 1: Enter Car Details' : step === 2 ? 'Step 2: Car Images' : step === 3 ? 'Step 3: Pickup Point' : step === 4 ? 'Step 4: Preferences' : 'Step 5: Pricing'}</CustomText>
+                <CustomText fontType='primary' weight='Regular' style={{color:'#a3a3a3', fontSize:11,letterSpacing:.15}}>{STEP_LABELS[step]}</CustomText>
             </View>
             <View style={{flexDirection:'row',justifyContent:'flex-end',alignItems:'flex-end'}}>
               <TouchableOpacity onPress={handleBack} style={{ height:32,width:32,justifyContent:'center',alignItems:'center'}}>
@@ -121,11 +175,13 @@ const AddCar = ({route}) => {
             </View>
           </View>
         </View>
+        <StepProgress step={step} />
         <View style={{flex:1,paddingHorizontal:0,paddingVertical:0}}>
         {renderStep()}
         </View>
-        </View> : <View>
-          <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>Loading...</CustomText>
+        </View> : <View style={{flex:1,justifyContent:'center',alignItems:'center',gap:12}}>
+          <ActivityIndicator size='small' color={BRAND_COLOR} />
+          <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15}}>Loading...</CustomText>
         </View>}
     </View>
   );
@@ -140,10 +196,11 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
     const [verifying, setVerifying] = useState(false);
     const [verification, setVerification] = useState(null);
     const [verifyError, setVerifyError] = useState('');
+    const [listError, setListError] = useState('');
 
-    // Checks the registration number against the RC records (Cashfree) before
-    // the car is created, so the host can confirm the owner/vehicle details
-    // match what they typed. Continue stays disabled until this passes.
+    // Checks the registration number against the RC records (Cashfree). RC
+    // verification isn't live yet, so a failure here must not dead-end the
+    // listing: we surface the reason and let the host continue unverified.
     const handleVerify = async () => {
       try {
         setVerifying(true);
@@ -154,7 +211,14 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
         });
         setVerification(response.data);
       } catch (error) {
-        setVerifyError(error.response?.data?.error || 'Could not verify this vehicle number');
+        const message = apiError(error, 'Could not verify this vehicle number');
+        // A duplicate registration is a genuine stop — everything else is
+        // treated as "verification unavailable" and skipped.
+        if (/already exists/i.test(message)) {
+          setVerifyError(message);
+        } else {
+          setVerification({ bypassed: true, verified: false, message });
+        }
       } finally {
         setVerifying(false);
       }
@@ -167,29 +231,37 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
       setVerifyError('');
     };
 
-    async function getBrands() {
-        try {
-            const response = await axios.get(API_URL+'/brand');
-            setBrands(response.data);
-        } catch (error) {
-            console.error('Error fetching brands:', error);
-            return [];
+    // Brands and cities are public endpoints — fetched without the Authorization
+    // header so a stale token can't take the pickers down, and with the error
+    // surfaced (plus Retry) instead of only logged to the console.
+    const loadOptions = async () => {
+        setListError('');
+        const client = UnauthAxios();
+        const [brandRes, cityRes] = await Promise.allSettled([
+            client.get(`${API_URL}/brand`),
+            client.get(`${API_URL}/city`),
+        ]);
+
+        const failures = [];
+        if (brandRes.status === 'fulfilled') {
+            setBrands(asList(brandRes.value.data, 'brands'));
+        } else {
+            console.error('Error fetching brands:', apiError(brandRes.reason, ''));
+            failures.push('brands');
         }
-    }
-   
-    async function getCities() {
-        try {
-            const response = await axios.get(API_URL+'/city');
-            setCities(response.data);
-        } catch (error) {
-            console.error('Error fetching cities:', error);
-            return [];
+        if (cityRes.status === 'fulfilled') {
+            setCities(asList(cityRes.value.data, 'cities'));
+        } else {
+            console.error('Error fetching cities:', apiError(cityRes.reason, ''));
+            failures.push('cities');
         }
-    }
+        if (failures.length) {
+            setListError(`Couldn't load ${failures.join(' and ')}. Check your connection and retry.`);
+        }
+    };
 
     useEffect(() => {
-        getBrands();
-        getCities();
+        loadOptions();
     }, []);
 
     const handleSubmit = async () => {
@@ -213,16 +285,33 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
       } catch (error) {
         setSubmitLoading(false);
         console.error('Error submitting car details:', error);
-        ToastAndroid.show(error.response?.data?.error || 'Error submitting car details', ToastAndroid.SHORT);
+        notify(apiError(error, 'Error submitting car details'));
       }
     }
             
   return (<KeyboardAvoidingView style={{flexDirection:'column',justifyContent:'space-between',height:'100%',paddingHorizontal:16,paddingVertical:24}}>
-    <View>
+    <ScrollView showsVerticalScrollIndicator={false}>
+
+      <CustomText fontType='primary' weight='Bold' style={{color:'#e3e3e3', fontSize:18,letterSpacing:-.3}}>Tell us about your car</CustomText>
+      <CustomText fontType='primary' weight='Regular' style={{color:'#757575', fontSize:12,marginTop:4}}>We'll check the registration before you continue.</CustomText>
+
+      {listError ? (
+        <View style={{marginTop:16,backgroundColor:'#2a1416',borderRadius:8,borderWidth:1,borderColor:'#5c2a2e',padding:12,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12}}>
+          <CustomText fontType='primary' weight='Medium' style={{color:'#ff8f8f',fontSize:12,flex:1}}>{listError}</CustomText>
+          <TouchableOpacity onPress={loadOptions} style={{backgroundColor:'#5c2a2e',borderRadius:5,paddingVertical:6,paddingHorizontal:12}}>
+            <CustomText fontType='primary' weight='Bold' style={{color:'#ffd9d9',fontSize:11,textTransform:'uppercase'}}>Retry</CustomText>
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       <View style={{marginTop:20}}>
         <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>Vehicle Brand</CustomText>
-        <Select placeholder='Select Brand' options={brands} selected={brands.find((b) => b.id === carDetails.brandId)} onSelect={(option) => handleChange('brandId', option.id)} />
+        <Select placeholder={brands.length ? 'Select Brand' : 'Loading brands…'} options={brands} selected={brands.find((b) => b.id === carDetails.brandId)} onSelect={(option) => { handleChange('brandId', option.id); handleChange('brandName', option.name); }} />
+      </View>
+
+      <View style={{marginTop:20}}>
+        <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>City</CustomText>
+        <Select placeholder={cities.length ? 'Select City' : 'Loading cities…'} options={cities} selected={cities.find((c) => c.id === carDetails.cityId)} onSelect={(option) => { handleChange('cityId', option.id); handleChange('cityName', option.name); }} />
       </View>
 
       <View style={{flexDirection:'column',justifyContent:'space-between',width:'100%',marginTop:20}}>
@@ -249,7 +338,7 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
       {verification ? (
         <View style={{marginTop:16,backgroundColor:'#1c1c1e',borderRadius:8,borderWidth:1,borderColor:BRAND_COLOR,padding:14}}>
           <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:8}}>
-            <Icon name='checkmark-circle' size={16} color={BRAND_COLOR} />
+            <Icon name={verification.bypassed ? 'information-circle' : 'checkmark-circle'} size={16} color={BRAND_COLOR} />
             <CustomText fontType='primary' weight='Bold' style={{color:BRAND_COLOR,fontSize:12,textTransform:'uppercase',letterSpacing:.15}}>
               {verification.bypassed ? 'Verification skipped' : 'Vehicle verified'}
             </CustomText>
@@ -257,7 +346,7 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
 
           {verification.bypassed ? (
             <CustomText fontType='primary' weight='Regular' style={{color:'#a3a3a3',fontSize:12,lineHeight:18}}>
-              RC verification isn't enabled yet, so these details weren't checked. You can continue.
+              {verification.message || "RC verification isn't enabled yet, so these details weren't checked."} You can continue with your listing.
             </CustomText>
           ) : (
             <View style={{gap:6}}>
@@ -283,12 +372,12 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
           )}
         </View>
       ) : null}
-    </View>
+    </ScrollView>
 
     <View style={{flexDirection:'column',justifyContent:'space-between',width:'100%',marginTop:20}}>
       {!verification && !carDetails.vehicleId ? (
         (() => {
-          const canVerify = !verifying && !!carDetails.brandId && !!carDetails.vehicleName && !!carDetails.vehicleNumber;
+          const canVerify = !verifying && !!carDetails.brandId && !!carDetails.cityId && !!carDetails.vehicleName && !!carDetails.vehicleNumber;
           return (
             <TouchableOpacity disabled={!canVerify} onPress={handleVerify} style={{backgroundColor: canVerify ? BRAND_COLOR : '#959595',borderRadius:5,paddingVertical:12,paddingHorizontal:12}}>
               {verifying ? (
@@ -386,7 +475,7 @@ const uploadImages = async () => {
     setSubmitLoading(false);
   } catch (error) {
     console.error('Error uploading images:', error.response ? error.response.data : error.message);
-    ToastAndroid.show('Error uploading images', ToastAndroid.SHORT);
+    notify(apiError(error, 'Error uploading images'));
     setSubmitLoading(false);
   }
 };
@@ -492,7 +581,7 @@ const Step3 = ({ carDetails, handleChange, handleNext }) => {
       }
     } catch (error) {
       console.log('Error validating location:', error);
-      ToastAndroid.show('Error validating location', ToastAndroid.SHORT);
+      notify(apiError(error, 'Error validating location'));
     }
   };
 
@@ -517,30 +606,39 @@ const Step3 = ({ carDetails, handleChange, handleNext }) => {
     } catch (error) {
       console.log(error);
       setDetectingLocation(false);
-      ToastAndroid.show('Failed to detect location', ToastAndroid.SHORT);
+      notify('Failed to detect location');
     }
   };
 
   const getCity = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/city`);
-      setCities(response.data);
-      setSelectedCity(response.data[0]);
+      const response = await UnauthAxios().get(`${API_URL}/city`);
+      const list = asList(response.data, 'cities');
+      setCities(list);
+      // Default to the city picked in step 1 rather than always the first one.
+      const city = list.find((c) => c.id === carDetails.cityId) || list[0];
+      if (!city) {
+        setLoading(false);
+        notify("Couldn't load cities. Check your connection and try again.");
+        return;
+      }
+      setSelectedCity(city);
       setRegion({
-        latitude: parseFloat(response.data[0].lat),
-        longitude: parseFloat(response.data[0].lng),
+        latitude: parseFloat(city.lat),
+        longitude: parseFloat(city.lng),
         latitudeDelta: 0.0922,
         longitudeDelta: 0.0421,
       });
       setMarker({
-        latitude: parseFloat(response.data[0].lat),
-        longitude: parseFloat(response.data[0].lng),
+        latitude: parseFloat(city.lat),
+        longitude: parseFloat(city.lng),
       });
       setLoading(false);
     } catch (error) {
       setLoading(false);
       console.error('Error fetching city:', error);
+      notify(apiError(error, 'Error fetching cities'));
     }
   }
 
@@ -548,12 +646,19 @@ const Step3 = ({ carDetails, handleChange, handleNext }) => {
     try {
       setSubmitLoading(true);
       const response = await axios.post(`${API_URL}/host/vehicles`, {step:3,vehicleId:carDetails.vehicleId,cityId:selectedCity.id,lat:marker.latitude,long:marker.longitude});
+      // Kept for the review step.
+      handleChange('pickupPoint', {
+        cityId: selectedCity.id,
+        cityName: selectedCity.name,
+        lat: marker.latitude,
+        long: marker.longitude,
+      });
       handleNext();
       setSubmitLoading(false);
     } catch (error) {
       setSubmitLoading(false);
       console.error('Error submitting pickup point:', error);
-      ToastAndroid.show('Error submitting pickup point', ToastAndroid.SHORT);
+      notify(apiError(error, 'Error submitting pickup point'));
     }
   }
 
@@ -661,13 +766,14 @@ const Step4 = ({ carDetails, handleChange, handleNext,navigation }) => {
     try {
       setSubmitLoading(true);
       const response = await axios.post(`${API_URL}/host/vehicles`, {step:4,vehicleId:carDetails.vehicleId,preferences:selectedPreferences});
+      handleChange('preferences', selectedPreferences);
       // Continue to pricing — skipping it left cars without a rate plan.
       handleNext();
       setSubmitLoading(false);
     } catch (error) {
       setSubmitLoading(false);
       console.error('Error submitting preferences:', error);
-      ToastAndroid.show('Error submitting preferences', ToastAndroid.SHORT);
+      notify(apiError(error, 'Error submitting preferences'));
     }
   }
 
@@ -702,21 +808,12 @@ const Step4 = ({ carDetails, handleChange, handleNext,navigation }) => {
   );
 };
 
-const Step5 = ({ carDetails, handleChange,navigation }) => {
+const Step5 = ({ carDetails, handleChange, handleNext }) => {
 
-  const [submitLoading, setSubmitLoading] = useState(false);
-  const handleSubmit = async () => {
-    try {
-      setSubmitLoading(true);
-      const response = await axios.post(`${API_URL}/host/vehicles`, {step:5,vehicleId:carDetails.vehicleId,vehiclePlan:  {weekdayPricing:carDetails.weekdayPricing,weekendPricing:carDetails.weekendPricing,kmAlloted:carDetails.kmAlloted,perHourFee:carDetails.perHourFee}});
-      navigation.navigate('HostCarInfo', {vehicleId:carDetails.vehicleId});
-      setSubmitLoading(false);
-    } catch (error) {
-      setSubmitLoading(false);
-      console.error('Error submitting pricing:', error.message);
-      ToastAndroid.show('Error submitting pricing', ToastAndroid.SHORT);
-    }
-  }
+  // Pricing is only collected here — it's saved from the review step, so the
+  // host gets a last look before the car goes live.
+  const handleSubmit = () => handleNext();
+  const submitLoading = false;
   return <View style={{ padding: 16, flex: 1, justifyContent: 'space-between' }}>
     <View style={{flex:1,justifyContent:'space-between'}}>
     <View>
@@ -770,10 +867,114 @@ const Step5 = ({ carDetails, handleChange,navigation }) => {
       />
       </View>
       <TouchableOpacity disabled={submitLoading || !carDetails.kmAlloted || !carDetails.perHourFee || !carDetails.weekdayPricing || !carDetails.weekendPricing} onPress={handleSubmit} style={{ backgroundColor: (submitLoading || !carDetails.kmAlloted || !carDetails.perHourFee || !carDetails.weekdayPricing || !carDetails.weekendPricing) ? '#959595' : BRAND_COLOR, borderRadius: 8, paddingVertical: 16, paddingHorizontal: 12, color: '#fff', fontSize: 14, width: '100%', marginTop: 20 }}>
-        <CustomText fontType='primary' weight='Bold' style={{ color: '#000', fontSize: 12, textTransform: 'uppercase', letterSpacing: -0.15, textAlign: 'center' }}>Add Vehicle Now</CustomText>
+        <CustomText fontType='primary' weight='Bold' style={{ color: '#000', fontSize: 12, textTransform: 'uppercase', letterSpacing: -0.15, textAlign: 'center' }}>Review Listing</CustomText>
       </TouchableOpacity>
     </View>
   </View>
+};
+
+// Final step: everything the host entered, in one place, then publish.
+const Step6 = ({ carDetails, navigation }) => {
+  const [submitLoading, setSubmitLoading] = useState(false);
+
+  const prefs = carDetails.preferences || {};
+  const enabledPrefs = [
+    prefs.midnightBooking && 'Midnight booking',
+    prefs.selfPickup && 'Self pickup',
+    prefs.deliverAvailable && 'Delivery',
+  ].filter(Boolean);
+
+  const Row = ({ label, value }) => (
+    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',paddingVertical:7,gap:16}}>
+      <CustomText fontType='primary' weight='Regular' style={{color:'#757575',fontSize:12}}>{label}</CustomText>
+      <CustomText fontType='primary' weight='Medium' style={{color:'#e3e3e3',fontSize:12,flexShrink:1,textAlign:'right'}}>{value || '—'}</CustomText>
+    </View>
+  );
+
+  const Card = ({ title, children }) => (
+    <View style={{backgroundColor:'#1c1c1e',borderRadius:10,padding:14,marginBottom:12}}>
+      <CustomText fontType='primary' weight='Bold' style={{color:'#959595',fontSize:10,textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>{title}</CustomText>
+      {children}
+    </View>
+  );
+
+  const handlePublish = async () => {
+    try {
+      setSubmitLoading(true);
+      await axios.post(`${API_URL}/host/vehicles`, {
+        step: 5,
+        vehicleId: carDetails.vehicleId,
+        vehiclePlan: {
+          kmAlloted: carDetails.kmAlloted,
+          // Field names the backend actually reads — the old payload used
+          // weekdayPricing/weekendPricing, so every plan saved as null.
+          extraKmFee: carDetails.perHourFee,
+          weekdayFee: carDetails.weekdayPricing,
+          weekendFee: carDetails.weekendPricing,
+        },
+      });
+      setSubmitLoading(false);
+      notify('Your car is listed');
+      navigation.navigate('HostCarInfo', { vehicleId: carDetails.vehicleId });
+    } catch (error) {
+      setSubmitLoading(false);
+      console.error('Error publishing listing:', error.message);
+      notify(apiError(error, 'Could not publish this listing'));
+    }
+  };
+
+  return (
+    <View style={{flex:1,justifyContent:'space-between',paddingHorizontal:16,paddingTop:16}}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <CustomText fontType='primary' weight='Bold' style={{color:'#e3e3e3',fontSize:18,letterSpacing:-.3}}>Review your listing</CustomText>
+        <CustomText fontType='primary' weight='Regular' style={{color:'#757575',fontSize:12,marginTop:4,marginBottom:16}}>Go back to any step to change something.</CustomText>
+
+        {carDetails.images?.length ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom:12}}>
+            {carDetails.images.map((image, index) => (
+              <Image key={index} source={{uri: photoUrl(image.url)}} style={{width:140,height:96,borderRadius:8,marginRight:8}} />
+            ))}
+          </ScrollView>
+        ) : null}
+
+        <Card title='Car'>
+          <Row label='Brand' value={carDetails.brandName} />
+          <Row label='Name' value={carDetails.vehicleName} />
+          <Row label='Model' value={carDetails.model} />
+          <Row label='Registration' value={carDetails.vehicleNumber} />
+        </Card>
+
+        <Card title='Pickup'>
+          <Row label='City' value={carDetails.pickupPoint?.cityName || carDetails.cityName} />
+          <Row
+            label='Location'
+            value={carDetails.pickupPoint?.lat
+              ? `${Number(carDetails.pickupPoint.lat).toFixed(5)}, ${Number(carDetails.pickupPoint.long).toFixed(5)}`
+              : null}
+          />
+        </Card>
+
+        <Card title='Preferences'>
+          <Row label='Enabled' value={enabledPrefs.length ? enabledPrefs.join(', ') : 'None'} />
+        </Card>
+
+        <Card title='Pricing'>
+          <Row label='Alloted KMs' value={carDetails.kmAlloted} />
+          <Row label='Extra KM fee' value={carDetails.perHourFee ? `₹${carDetails.perHourFee}` : null} />
+          <Row label='Weekday (per hour)' value={carDetails.weekdayPricing ? `₹${carDetails.weekdayPricing}` : null} />
+          <Row label='Weekend (per hour)' value={carDetails.weekendPricing ? `₹${carDetails.weekendPricing}` : null} />
+        </Card>
+      </ScrollView>
+
+      <TouchableOpacity disabled={submitLoading} onPress={handlePublish} style={{backgroundColor: submitLoading ? '#959595' : BRAND_COLOR,borderRadius:8,paddingVertical:16,paddingHorizontal:12,width:'100%',marginVertical:16}}>
+        {submitLoading ? (
+          <ActivityIndicator size='small' color='#000' />
+        ) : (
+          <CustomText fontType='primary' weight='Bold' style={{color:'#000',fontSize:12,textTransform:'uppercase',letterSpacing:-.15,textAlign:'center'}}>Host My Car</CustomText>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
 };
 
 
