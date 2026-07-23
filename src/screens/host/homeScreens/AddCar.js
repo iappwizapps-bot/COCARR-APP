@@ -193,17 +193,27 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
     }, []);
 
     const handleSubmit = async () => {
-      try 
+      try
       {
         setSubmitLoading(true);
-        const response = await axios.post(API_URL+'/host/vehicles', {step:1,vehicleNumber:carDetails.vehicleNumber,cityId:carDetails.cityId,brandId:carDetails.brandId,model:carDetails.model,vehicleName:carDetails.vehicleName});
-        handleChange('vehicleId',response.data.id);
+        if (carDetails.vehicleId) {
+          // Came back to this step — update the existing car instead of
+          // creating a second one (registration numbers are unique).
+          await axios.put(`${API_URL}/host/vehicles/${carDetails.vehicleId}`, {
+            type: 'info',
+            vehicleName: carDetails.vehicleName,
+            model: carDetails.model,
+          });
+        } else {
+          const response = await axios.post(API_URL+'/host/vehicles', {step:1,vehicleNumber:carDetails.vehicleNumber,cityId:carDetails.cityId,brandId:carDetails.brandId,model:carDetails.model,vehicleName:carDetails.vehicleName});
+          handleChange('vehicleId',response.data.id);
+        }
         handleNext();
         setSubmitLoading(false);
       } catch (error) {
         setSubmitLoading(false);
         console.error('Error submitting car details:', error);
-        ToastAndroid.show('Error submitting car details', ToastAndroid.SHORT);
+        ToastAndroid.show(error.response?.data?.error || 'Error submitting car details', ToastAndroid.SHORT);
       }
     }
             
@@ -222,7 +232,12 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
       
       <View style={{flexDirection:'column',justifyContent:'space-between',width:'100%',marginTop:20}}>
         <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>Vehicle Number</CustomText>
-        <TextInput placeholder='Enter vehicle number' autoCapitalize='characters' style={{backgroundColor:'#1c1c1e',borderRadius:5,paddingVertical:9,paddingHorizontal:12,color:'#fff',fontSize:14}} value={carDetails.vehicleNumber} onChangeText={onNumberChange} />
+        <TextInput placeholder='Enter vehicle number' autoCapitalize='characters' editable={!carDetails.vehicleId} style={{backgroundColor: carDetails.vehicleId ? '#101010' : '#1c1c1e',borderRadius:5,paddingVertical:9,paddingHorizontal:12,color: carDetails.vehicleId ? '#757575' : '#fff',fontSize:14}} value={carDetails.vehicleNumber} onChangeText={onNumberChange} />
+        {carDetails.vehicleId ? (
+          <CustomText fontType='primary' weight='Regular' style={{color:'#757575',fontSize:11,marginTop:4}}>
+            Already verified — the registration number can't be changed now.
+          </CustomText>
+        ) : null}
       </View>
 
       {verifyError ? (
@@ -271,7 +286,7 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
     </View>
 
     <View style={{flexDirection:'column',justifyContent:'space-between',width:'100%',marginTop:20}}>
-      {!verification ? (
+      {!verification && !carDetails.vehicleId ? (
         (() => {
           const canVerify = !verifying && !!carDetails.brandId && !!carDetails.vehicleName && !!carDetails.vehicleNumber;
           return (
@@ -302,18 +317,30 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
 const Step2 = ({ carDetails, handleChange, handleNext }) => {
   const [images, setImages] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const MAX_IMAGES = 5;
+
+  // Adds to the existing selection (previously this replaced it, so picking a
+  // second time wiped the earlier photos) and respects the 5-photo limit.
   const selectImages = () => {
-    launchImageLibrary({ mediaType: 'photo', selectionLimit: 0 }, (response) => {
+    const remaining = MAX_IMAGES - images.length;
+    if (remaining <= 0) return;
+    launchImageLibrary({ mediaType: 'photo', selectionLimit: remaining }, (response) => {
       if (response.didCancel) {
         console.log('User cancelled image picker');
       } else if (response.errorCode) {
         console.log('ImagePicker Error: ', response.errorMessage);
       } else {
-        const updatedAssets = response.assets.map((asset, index) => ({
+        const picked = (response.assets || []).slice(0, remaining).map((asset) => ({
           ...asset,
-          isCover: index === 0
+          isCover: false,
         }));
-        setImages(updatedAssets);
+        setImages((prev) => {
+          const merged = [...prev, ...picked].slice(0, MAX_IMAGES);
+          // Always keep exactly one cover.
+          return merged.some((i) => i.isCover)
+            ? merged
+            : merged.map((im, i) => ({ ...im, isCover: i === 0 }));
+        });
       }
     });
   };
@@ -367,7 +394,12 @@ const uploadImages = async () => {
   const handleRemoveImage = (index) => {
     const newImages = [...images];
     newImages.splice(index, 1);
-    setImages(newImages);
+    // If the cover was removed, promote the first remaining photo.
+    setImages(
+      newImages.some((i) => i.isCover)
+        ? newImages
+        : newImages.map((im, i) => ({ ...im, isCover: i === 0 }))
+    );
   };
 
   const setImageAsCover = (index) => {
