@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ToastAndroid, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ToastAndroid, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
+import Icon from 'react-native-vector-icons/Ionicons';
 import Header from '../../components/CenterHeader';
 import { useNavigation } from '@react-navigation/native';
 import CustomText from '../../components/CustomText';
@@ -11,11 +12,18 @@ import { updateProfile } from '../../store/authSlice';
 import { UnauthAxios } from '../../utils/utils';
 export const EditProfileScreen = () => {
 
-  const [info,setInfo] = useState({name:'',email:'',profilePhoto:''})
+  const [info,setInfo] = useState({name:'',email:'',contactNumber:'',profilePhoto:''})
   const [profileImage, setProfileImage] = useState(null);
   const [isProfileChanged, setIsProfileChanged] = useState(false);
+  const [saving, setSaving] = useState(false);
   const dispatch = useDispatch()
   const navigation = useNavigation()
+
+  // ToastAndroid is Android-only — show an alert on iOS instead.
+  const notify = (message) => {
+    if (Platform.OS === 'android') ToastAndroid.show(message, ToastAndroid.SHORT);
+    else Alert.alert('', message);
+  };
 
   const pickImage = () => {
     launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 }, (response) => {
@@ -46,11 +54,7 @@ export const EditProfileScreen = () => {
           });
         }
     }catch(error){
-        if (Platform.OS === 'android') {
-          ToastAndroid.show('Error fetching user', ToastAndroid.SHORT);
-        } else {
-          Alert.alert('Error', 'Error fetching user');
-        }
+        notify('Error fetching user');
       }
     }
     getProfile()
@@ -58,6 +62,7 @@ export const EditProfileScreen = () => {
 
   const handleSave = async () => {
     try {
+      setSaving(true);
       let profilePhotoUrl = profileImage?.uri;
       
       if (isProfileChanged && profileImage) {
@@ -88,10 +93,11 @@ export const EditProfileScreen = () => {
         } catch (uploadError) {
           console.error('Error uploading to S3:', uploadError);
           if (uploadError.code === 'ECONNABORTED') {
-            ToastAndroid.show('Upload timed out. Please try again.', ToastAndroid.SHORT);
+            notify('Upload timed out. Please try again.');
           } else {
-            ToastAndroid.show('Error uploading image. Please try again.', ToastAndroid.SHORT);
+            notify('Error uploading image. Please try again.');
           }
+          setSaving(false);
           return;
         }
       }
@@ -103,7 +109,7 @@ export const EditProfileScreen = () => {
       });
 
       setIsProfileChanged(false);
-      ToastAndroid.show('Profile updated', ToastAndroid.SHORT);
+      notify('Profile updated');
       dispatch(updateProfile({
         userName: info.name,
         email: info.email,
@@ -113,7 +119,9 @@ export const EditProfileScreen = () => {
 
     } catch (error) {
       console.error('Error updating profile:', error.response);
-      ToastAndroid.show(error.response?.data?.message || 'Error updating profile', ToastAndroid.SHORT);
+      notify(error.response?.data?.message || 'Error updating profile');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -124,8 +132,22 @@ export const EditProfileScreen = () => {
 
      
       <View style={{flexDirection:'column', alignItems:'center', gap:12, marginBottom:24, paddingHorizontal:24,}}>
-          <TouchableOpacity onPress={pickImage} style={{ width: 140,height: 140,borderRadius: 120,marginBottom: 20,backgroundColor:'#1c1c1e'}}>
-              {profileImage?.uri && <Image source={{uri: profileImage.uri}} style={styles.profileImage} />}
+          <TouchableOpacity activeOpacity={0.85} onPress={pickImage} style={styles.avatarRing}>
+              {profileImage?.uri ? (
+                <Image source={{uri: profileImage.uri}} style={styles.profileImage} />
+              ) : (
+                <CustomText fontType='primary' weight='Bold' style={styles.avatarInitial}>
+                  {(info.name || 'U').charAt(0).toUpperCase()}
+                </CustomText>
+              )}
+              <View style={styles.avatarCam}>
+                <Icon name="camera" size={16} color="#000" />
+              </View>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={pickImage} style={{marginBottom: 12}}>
+            <CustomText fontType='primary' weight='Medium' style={styles.changePhotoText}>
+              {profileImage?.uri ? 'Change photo' : 'Add photo'}
+            </CustomText>
           </TouchableOpacity>
 
             <View style={{flexDirection:'column', gap:4, width:'100%'}}>
@@ -166,8 +188,12 @@ export const EditProfileScreen = () => {
           </View>
 
           <View style={{paddingHorizontal:24,paddingVertical:24}}>
-            <TouchableOpacity style={styles.button} onPress={handleSave}>
-                <CustomText fontType='primary' weight='Bold' style={styles.buttonText}>Save Profile</CustomText>
+            <TouchableOpacity style={[styles.button, saving && styles.buttonDisabled]} onPress={handleSave} disabled={saving}>
+                {saving ? (
+                  <ActivityIndicator size="small" color="#000" />
+                ) : (
+                  <CustomText fontType='primary' weight='Bold' style={styles.buttonText}>Save Profile</CustomText>
+                )}
             </TouchableOpacity>
           </View>
           </ScrollView>
@@ -189,11 +215,45 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 20,
   },
-  profileImage: {
+  avatarRing: {
     width: 140,
     height: 140,
-    borderRadius: 120,
-    marginBottom: 20,
+    borderRadius: 70,
+    backgroundColor: '#1c1c1e',
+    borderWidth: 2,
+    borderColor: '#2c2c2e',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  avatarInitial: {
+    color: '#EDBF31',
+    fontSize: 46,
+  },
+  avatarCam: {
+    position: 'absolute',
+    right: 2,
+    bottom: 2,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#EDBF31',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#000',
+  },
+  changePhotoText: {
+    color: '#EDBF31',
+    fontSize: 13,
+  },
+  profileImage: {
+    width: 136,
+    height: 136,
+    borderRadius: 68,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   profileImagePlaceholder: {
     width: 100,
