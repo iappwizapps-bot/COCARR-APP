@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Image, Switch, ToastAndroid, TouchableHighlight, ActivityIndicator, ScrollView, Platform, Alert, } from 'react-native';
+import { View, Text, Button, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Image, Switch, ToastAndroid, TouchableHighlight, ActivityIndicator, ScrollView, Platform, Alert, Modal, } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { API_URL, BRAND_COLOR } from '../../../utils/constants';
@@ -41,6 +41,82 @@ const STEP_LABELS = {
   4: 'Step 4: Preferences',
   5: 'Step 5: Pricing',
   6: 'Step 6: Review & Host',
+};
+
+// Self-contained dropdown built on RN's Modal. The shared ActionSheet-based
+// Select left this screen unresponsive once two of them were on one step, so
+// step 1 uses this instead. Searchable — the brand list is 40+ entries.
+const OptionPicker = ({ options, selectedId, onSelect, placeholder, searchable = true }) => {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+
+  const selected = options.find((o) => o.id === selectedId);
+  const filtered = query
+    ? options.filter((o) => String(o.name || '').toLowerCase().includes(query.toLowerCase()))
+    : options;
+
+  const close = () => {
+    setOpen(false);
+    setQuery('');
+  };
+
+  return (
+    <View>
+      <TouchableOpacity
+        onPress={() => options.length && setOpen(true)}
+        activeOpacity={0.7}
+        style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',backgroundColor:'#1c1c1e',borderRadius:5,paddingVertical:12,paddingHorizontal:12}}
+      >
+        <CustomText fontType='primary' weight='Regular' style={{color: selected ? '#efefef' : '#959595', fontSize:14,flex:1}} numberOfLines={1}>
+          {selected ? selected.name : placeholder}
+        </CustomText>
+        <Icon name='chevron-down' size={14} color='#959595' />
+      </TouchableOpacity>
+
+      <Modal visible={open} transparent animationType='slide' onRequestClose={close}>
+        <TouchableOpacity activeOpacity={1} onPress={close} style={{flex:1,backgroundColor:'#000000aa',justifyContent:'flex-end'}}>
+          <TouchableOpacity activeOpacity={1} onPress={() => {}} style={{backgroundColor:'#141416',borderTopLeftRadius:16,borderTopRightRadius:16,maxHeight:'70%',paddingBottom:24}}>
+            <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingVertical:14,borderBottomWidth:1,borderBottomColor:'#232326'}}>
+              <CustomText fontType='primary' weight='Bold' style={{color:'#e3e3e3',fontSize:13,textTransform:'uppercase',letterSpacing:.5}}>{placeholder}</CustomText>
+              <TouchableOpacity onPress={close} hitSlop={{top:10,bottom:10,left:10,right:10}}>
+                <Icon name='close' size={20} color='#959595' />
+              </TouchableOpacity>
+            </View>
+
+            {searchable && options.length > 8 ? (
+              <TextInput
+                placeholder='Search'
+                placeholderTextColor='#757575'
+                value={query}
+                onChangeText={setQuery}
+                autoCorrect={false}
+                style={{backgroundColor:'#1c1c1e',color:'#fff',borderRadius:8,marginHorizontal:16,marginTop:12,paddingHorizontal:12,paddingVertical:9,fontSize:14}}
+              />
+            ) : null}
+
+            <ScrollView style={{marginTop:8}} keyboardShouldPersistTaps='handled'>
+              {filtered.length === 0 ? (
+                <CustomText fontType='primary' weight='Regular' style={{color:'#757575',fontSize:13,padding:16,textAlign:'center'}}>No matches</CustomText>
+              ) : (
+                filtered.map((option) => (
+                  <TouchableOpacity
+                    key={option.id}
+                    onPress={() => { onSelect(option); close(); }}
+                    style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingVertical:14,borderBottomWidth:1,borderBottomColor:'#1d1d1f'}}
+                  >
+                    <CustomText fontType='primary' weight={option.id === selectedId ? 'Bold' : 'Regular'} style={{color: option.id === selectedId ? BRAND_COLOR : '#e3e3e3',fontSize:14,flex:1}}>
+                      {option.name}
+                    </CustomText>
+                    {option.id === selectedId ? <Icon name='checkmark' size={16} color={BRAND_COLOR} /> : null}
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+    </View>
+  );
 };
 
 // Thin progress bar under the header so the host can see how far along they are.
@@ -289,8 +365,8 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
       }
     }
             
-  return (<KeyboardAvoidingView style={{flexDirection:'column',justifyContent:'space-between',height:'100%',paddingHorizontal:16,paddingVertical:24}}>
-    <ScrollView showsVerticalScrollIndicator={false}>
+  return (<KeyboardAvoidingView style={{flex:1,flexDirection:'column',justifyContent:'space-between',paddingHorizontal:16,paddingVertical:24}}>
+    <ScrollView style={{flex:1}} contentContainerStyle={{paddingBottom:16}} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps='handled'>
 
       <CustomText fontType='primary' weight='Bold' style={{color:'#e3e3e3', fontSize:18,letterSpacing:-.3}}>Tell us about your car</CustomText>
       <CustomText fontType='primary' weight='Regular' style={{color:'#757575', fontSize:12,marginTop:4}}>We'll check the registration before you continue.</CustomText>
@@ -306,12 +382,12 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
 
       <View style={{marginTop:20}}>
         <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>Vehicle Brand</CustomText>
-        <Select placeholder={brands.length ? 'Select Brand' : 'Loading brands…'} options={brands} selected={brands.find((b) => b.id === carDetails.brandId)} onSelect={(option) => { handleChange('brandId', option.id); handleChange('brandName', option.name); }} />
+        <OptionPicker placeholder={brands.length ? 'Select Brand' : 'Loading brands…'} options={brands} selectedId={carDetails.brandId} onSelect={(option) => { handleChange('brandId', option.id); handleChange('brandName', option.name); }} />
       </View>
 
       <View style={{marginTop:20}}>
         <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>City</CustomText>
-        <Select placeholder={cities.length ? 'Select City' : 'Loading cities…'} options={cities} selected={cities.find((c) => c.id === carDetails.cityId)} onSelect={(option) => { handleChange('cityId', option.id); handleChange('cityName', option.name); }} />
+        <OptionPicker placeholder={cities.length ? 'Select City' : 'Loading cities…'} options={cities} selectedId={carDetails.cityId} onSelect={(option) => { handleChange('cityId', option.id); handleChange('cityName', option.name); }} />
       </View>
 
       <View style={{flexDirection:'column',justifyContent:'space-between',width:'100%',marginTop:20}}>
@@ -925,7 +1001,7 @@ const Step6 = ({ carDetails, navigation }) => {
 
   return (
     <View style={{flex:1,justifyContent:'space-between',paddingHorizontal:16,paddingTop:16}}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={{paddingBottom:16}} showsVerticalScrollIndicator={false}>
         <CustomText fontType='primary' weight='Bold' style={{color:'#e3e3e3',fontSize:18,letterSpacing:-.3}}>Review your listing</CustomText>
         <CustomText fontType='primary' weight='Regular' style={{color:'#757575',fontSize:12,marginTop:4,marginBottom:16}}>Go back to any step to change something.</CustomText>
 
