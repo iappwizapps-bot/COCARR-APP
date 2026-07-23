@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Image, Switch, ToastAndroid, TouchableHighlight, } from 'react-native';
+import { View, Text, Button, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Image, Switch, ToastAndroid, TouchableHighlight, ActivityIndicator, ScrollView, } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { API_URL, BRAND_COLOR } from '../../../utils/constants';
@@ -137,6 +137,36 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
     const [brands, setBrands] = useState([]);
     const [cities, setCities] = useState([]);
     const [submitLoading, setSubmitLoading] = useState(false);
+    const [verifying, setVerifying] = useState(false);
+    const [verification, setVerification] = useState(null);
+    const [verifyError, setVerifyError] = useState('');
+
+    // Checks the registration number against the RC records (Cashfree) before
+    // the car is created, so the host can confirm the owner/vehicle details
+    // match what they typed. Continue stays disabled until this passes.
+    const handleVerify = async () => {
+      try {
+        setVerifying(true);
+        setVerifyError('');
+        setVerification(null);
+        const response = await axios.post(`${API_URL}/host/vehicles/verify`, {
+          vehicleNumber: carDetails.vehicleNumber,
+        });
+        setVerification(response.data);
+      } catch (error) {
+        setVerifyError(error.response?.data?.error || 'Could not verify this vehicle number');
+      } finally {
+        setVerifying(false);
+      }
+    };
+
+    const onNumberChange = (text) => {
+      handleChange('vehicleNumber', text);
+      // Any edit invalidates a previous verification.
+      setVerification(null);
+      setVerifyError('');
+    };
+
     async function getBrands() {
         try {
             const response = await axios.get(API_URL+'/brand');
@@ -192,14 +222,77 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
       
       <View style={{flexDirection:'column',justifyContent:'space-between',width:'100%',marginTop:20}}>
         <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>Vehicle Number</CustomText>
-        <TextInput placeholder='Enter vehicle number' style={{backgroundColor:'#1c1c1e',borderRadius:5,paddingVertical:9,paddingHorizontal:12,color:'#fff',fontSize:14}} value={carDetails.vehicleNumber} onChangeText={(text) => handleChange('vehicleNumber', text)} />
+        <TextInput placeholder='Enter vehicle number' autoCapitalize='characters' style={{backgroundColor:'#1c1c1e',borderRadius:5,paddingVertical:9,paddingHorizontal:12,color:'#fff',fontSize:14}} value={carDetails.vehicleNumber} onChangeText={onNumberChange} />
       </View>
+
+      {verifyError ? (
+        <View style={{marginTop:16,backgroundColor:'#2a1416',borderRadius:8,borderWidth:1,borderColor:'#5c2a2e',padding:12}}>
+          <CustomText fontType='primary' weight='Medium' style={{color:'#ff8f8f',fontSize:12}}>{verifyError}</CustomText>
+        </View>
+      ) : null}
+
+      {verification ? (
+        <View style={{marginTop:16,backgroundColor:'#1c1c1e',borderRadius:8,borderWidth:1,borderColor:BRAND_COLOR,padding:14}}>
+          <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:8}}>
+            <Icon name='checkmark-circle' size={16} color={BRAND_COLOR} />
+            <CustomText fontType='primary' weight='Bold' style={{color:BRAND_COLOR,fontSize:12,textTransform:'uppercase',letterSpacing:.15}}>
+              {verification.bypassed ? 'Verification skipped' : 'Vehicle verified'}
+            </CustomText>
+          </View>
+
+          {verification.bypassed ? (
+            <CustomText fontType='primary' weight='Regular' style={{color:'#a3a3a3',fontSize:12,lineHeight:18}}>
+              RC verification isn't enabled yet, so these details weren't checked. You can continue.
+            </CustomText>
+          ) : (
+            <View style={{gap:6}}>
+              {[
+                ['Owner', verification.ownerName],
+                ['Registration', verification.vehicleNumber],
+                ['Maker', verification.maker],
+                ['Model', verification.model],
+                ['Year', verification.manufacturingYear],
+                ['Fuel', verification.fuelType],
+                ['Seats', verification.seats],
+                ['RC status', verification.rcStatus],
+                ['Insurance upto', verification.insuranceUpto],
+              ]
+                .filter(([, value]) => value !== null && value !== undefined && value !== '')
+                .map(([label, value]) => (
+                  <View key={label} style={{flexDirection:'row',justifyContent:'space-between'}}>
+                    <CustomText fontType='primary' weight='Regular' style={{color:'#757575',fontSize:12}}>{label}</CustomText>
+                    <CustomText fontType='primary' weight='Medium' style={{color:'#e3e3e3',fontSize:12,flexShrink:1,textAlign:'right'}}>{String(value)}</CustomText>
+                  </View>
+                ))}
+            </View>
+          )}
+        </View>
+      ) : null}
     </View>
 
     <View style={{flexDirection:'column',justifyContent:'space-between',width:'100%',marginTop:20}}>
-      <TouchableOpacity disabled={submitLoading  || !carDetails.brandId || !carDetails.vehicleName || !carDetails.vehicleNumber} onPress={handleSubmit} style={{backgroundColor: (submitLoading  || !carDetails.brandId || !carDetails.vehicleName || !carDetails.vehicleNumber) ? '#959595' : BRAND_COLOR,borderRadius:5,paddingVertical:12,paddingHorizontal:12,color:'#fff',fontSize:14}}>
-        <CustomText fontType='primary' weight='Bold' style={{color:'#000', fontSize:12,textTransform:'uppercase',letterSpacing:-.15,textAlign:'center'}}>Verify and Continue</CustomText>
-      </TouchableOpacity>
+      {!verification ? (
+        (() => {
+          const canVerify = !verifying && !!carDetails.brandId && !!carDetails.vehicleName && !!carDetails.vehicleNumber;
+          return (
+            <TouchableOpacity disabled={!canVerify} onPress={handleVerify} style={{backgroundColor: canVerify ? BRAND_COLOR : '#959595',borderRadius:5,paddingVertical:12,paddingHorizontal:12}}>
+              {verifying ? (
+                <ActivityIndicator size='small' color='#000' />
+              ) : (
+                <CustomText fontType='primary' weight='Bold' style={{color:'#000', fontSize:12,textTransform:'uppercase',letterSpacing:-.15,textAlign:'center'}}>Verify</CustomText>
+              )}
+            </TouchableOpacity>
+          );
+        })()
+      ) : (
+        <TouchableOpacity disabled={submitLoading} onPress={handleSubmit} style={{backgroundColor: submitLoading ? '#959595' : BRAND_COLOR,borderRadius:5,paddingVertical:12,paddingHorizontal:12}}>
+          {submitLoading ? (
+            <ActivityIndicator size='small' color='#000' />
+          ) : (
+            <CustomText fontType='primary' weight='Bold' style={{color:'#000', fontSize:12,textTransform:'uppercase',letterSpacing:-.15,textAlign:'center'}}>Continue</CustomText>
+          )}
+        </TouchableOpacity>
+      )}
     </View>
   </KeyboardAvoidingView>)
 }
