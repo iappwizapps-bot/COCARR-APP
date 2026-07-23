@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Button, TextInput, TouchableOpacity, StatusBar, KeyboardAvoidingView, Image, Switch, ToastAndroid, TouchableHighlight, ActivityIndicator, ScrollView, Platform, Alert, Modal, } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { API_URL, BRAND_COLOR } from '../../../utils/constants';
+import { API_URL, BRAND_COLOR, SHOULD_VERIFY_VEHICLE } from '../../../utils/constants';
 import CustomText from '../../../components/CustomText';
 import Select from '../../../components/Select';
 import axios from 'axios';
@@ -185,20 +185,9 @@ const AddCar = ({route}) => {
           brandId: response.data.vehicleBrand || prev.brandId,
           brandName: response.data.brand?.name || prev.brandName,
         }));
-        console.log('res',response.data.isImagesUploaded)
-        if(response.data.isImagesUploaded === undefined || response.data.isImagesUploaded === false){
-          console.log('step 2')
-          setStep(2)
-        } else if(response.data.isPickupAdded === undefined || response.data.isPickupAdded === false){
-          console.log('step 3')
-          setStep(3)
-        } else if(response.data.isPreferencesAdded === undefined || response.data.isPreferencesAdded === false){
-          console.log('step 4')
-          setStep(4)
-        } else if(response.data.isPricingPlanAdded === undefined || response.data.isPricingPlanAdded === false){
-          console.log('step 5')
-          setStep(5)
-        }
+        // The wizard no longer writes per step, so there's no partial state to
+        // jump into — an older draft restarts at step 1 with its saved values
+        // prefilled and is completed by the single publish call.
       } 
       setLoading(false);
     } catch (error) {
@@ -274,10 +263,15 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
     const [verifyError, setVerifyError] = useState('');
     const [listError, setListError] = useState('');
 
-    // Checks the registration number against the RC records (Cashfree). RC
-    // verification isn't live yet, so a failure here must not dead-end the
-    // listing: we surface the reason and let the host continue unverified.
+    // Checks the registration number against the RC records (Cashfree).
+    // SHOULD_VERIFY_VEHICLE is off for now, so Verify skips the API entirely
+    // and just moves to the next step. When on, a failure still must not
+    // dead-end the listing: we surface the reason and let the host continue.
     const handleVerify = async () => {
+      if (!SHOULD_VERIFY_VEHICLE) {
+        await handleSubmit();
+        return;
+      }
       try {
         setVerifying(true);
         setVerifyError('');
@@ -340,29 +334,9 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
         loadOptions();
     }, []);
 
+    // Nothing is written until the review step — this just advances.
     const handleSubmit = async () => {
-      try
-      {
-        setSubmitLoading(true);
-        if (carDetails.vehicleId) {
-          // Came back to this step — update the existing car instead of
-          // creating a second one (registration numbers are unique).
-          await axios.put(`${API_URL}/host/vehicles/${carDetails.vehicleId}`, {
-            type: 'info',
-            vehicleName: carDetails.vehicleName,
-            model: carDetails.model,
-          });
-        } else {
-          const response = await axios.post(API_URL+'/host/vehicles', {step:1,vehicleNumber:carDetails.vehicleNumber,cityId:carDetails.cityId,brandId:carDetails.brandId,model:carDetails.model,vehicleName:carDetails.vehicleName});
-          handleChange('vehicleId',response.data.id);
-        }
-        handleNext();
-        setSubmitLoading(false);
-      } catch (error) {
-        setSubmitLoading(false);
-        console.error('Error submitting car details:', error);
-        notify(apiError(error, 'Error submitting car details'));
-      }
+      handleNext();
     }
             
   return (<KeyboardAvoidingView style={{flex:1,flexDirection:'column',justifyContent:'space-between',paddingHorizontal:16,paddingVertical:24}}>
@@ -453,10 +427,10 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
     <View style={{flexDirection:'column',justifyContent:'space-between',width:'100%',marginTop:20}}>
       {!verification && !carDetails.vehicleId ? (
         (() => {
-          const canVerify = !verifying && !!carDetails.brandId && !!carDetails.cityId && !!carDetails.vehicleName && !!carDetails.vehicleNumber;
+          const canVerify = !verifying && !submitLoading && !!carDetails.brandId && !!carDetails.cityId && !!carDetails.vehicleName && !!carDetails.vehicleNumber;
           return (
             <TouchableOpacity disabled={!canVerify} onPress={handleVerify} style={{backgroundColor: canVerify ? BRAND_COLOR : '#959595',borderRadius:5,paddingVertical:12,paddingHorizontal:12}}>
-              {verifying ? (
+              {verifying || submitLoading ? (
                 <ActivityIndicator size='small' color='#000' />
               ) : (
                 <CustomText fontType='primary' weight='Bold' style={{color:'#000', fontSize:12,textTransform:'uppercase',letterSpacing:-.15,textAlign:'center'}}>Verify</CustomText>
@@ -539,14 +513,9 @@ const uploadImages = async () => {
     });
 
     const uploadedImageUrls = await Promise.all(uploadPromises);
+    // Photos go to object storage now so the review step can show them, but
+    // they're only attached to a car when the listing is published.
     handleChange('images', uploadedImageUrls);
-
-    // Pass the array of URLs with isCover to the /host/vehicles endpoint
-    await axios.post(`${API_URL}/host/vehicles`, {
-      images: uploadedImageUrls,
-      step: 2,
-      vehicleId: carDetails.vehicleId
-    });
     handleNext();
     setSubmitLoading(false);
   } catch (error) {
@@ -721,8 +690,7 @@ const Step3 = ({ carDetails, handleChange, handleNext }) => {
   const handleSubmit = async () => {
     try {
       setSubmitLoading(true);
-      const response = await axios.post(`${API_URL}/host/vehicles`, {step:3,vehicleId:carDetails.vehicleId,cityId:selectedCity.id,lat:marker.latitude,long:marker.longitude});
-      // Kept for the review step.
+      // Held in state until the listing is published.
       handleChange('pickupPoint', {
         cityId: selectedCity.id,
         cityName: selectedCity.name,
@@ -841,7 +809,6 @@ const Step4 = ({ carDetails, handleChange, handleNext,navigation }) => {
   const handleSubmit = async () => {
     try {
       setSubmitLoading(true);
-      const response = await axios.post(`${API_URL}/host/vehicles`, {step:4,vehicleId:carDetails.vehicleId,preferences:selectedPreferences});
       handleChange('preferences', selectedPreferences);
       // Continue to pricing — skipping it left cars without a rate plan.
       handleNext();
@@ -977,13 +944,19 @@ const Step6 = ({ carDetails, navigation }) => {
   const handlePublish = async () => {
     try {
       setSubmitLoading(true);
-      await axios.post(`${API_URL}/host/vehicles`, {
-        step: 5,
-        vehicleId: carDetails.vehicleId,
+      // The one and only write: the whole listing in a single transaction.
+      const response = await axios.post(`${API_URL}/host/vehicles/listing`, {
+        vehicleId: carDetails.vehicleId || undefined,
+        vehicleNumber: carDetails.vehicleNumber,
+        brandId: carDetails.brandId,
+        cityId: carDetails.cityId,
+        vehicleName: carDetails.vehicleName,
+        model: carDetails.model,
+        images: carDetails.images,
+        pickup: carDetails.pickupPoint,
+        preferences: carDetails.preferences,
         vehiclePlan: {
           kmAlloted: carDetails.kmAlloted,
-          // Field names the backend actually reads — the old payload used
-          // weekdayPricing/weekendPricing, so every plan saved as null.
           extraKmFee: carDetails.perHourFee,
           weekdayFee: carDetails.weekdayPricing,
           weekendFee: carDetails.weekendPricing,
@@ -991,7 +964,7 @@ const Step6 = ({ carDetails, navigation }) => {
       });
       setSubmitLoading(false);
       notify('Your car is listed');
-      navigation.navigate('HostCarInfo', { vehicleId: carDetails.vehicleId });
+      navigation.navigate('HostCarInfo', { vehicleId: response.data.id });
     } catch (error) {
       setSubmitLoading(false);
       console.error('Error publishing listing:', error.message);
