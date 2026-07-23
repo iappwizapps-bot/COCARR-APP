@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Image, Switch, ToastAndroid, TouchableHighlight, ActivityIndicator, ScrollView, Platform, Alert, Modal, } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { API_URL, BRAND_COLOR } from '../../../utils/constants';
+import { API_URL, BRAND_COLOR, BYPASS_RC_VERIFY } from '../../../utils/constants';
 import CustomText from '../../../components/CustomText';
 import Select from '../../../components/Select';
 import axios from 'axios';
@@ -388,13 +388,21 @@ const StepRc = ({ carDetails, applyRcPayload, handleNext }) => {
     }
   };
 
-  // Fallback: verify by registration number against the RC records.
+  // Verify by registration number. When BYPASS_RC_VERIFY is on, skip the API and
+  // carry the entered number to step 2 (fields editable). Otherwise hit the RC
+  // verification API and pre-fill/lock from the result.
   const verifyByNumber = async () => {
     const number = manualNumber.trim().toUpperCase();
     if (!number) return;
+    setManualError('');
+    if (BYPASS_RC_VERIFY) {
+      handleChange('vehicleNumber', number);
+      handleChange('locked', {});
+      handleNext();
+      return;
+    }
     try {
       setManualBusy(true);
-      setManualError('');
       const res = await axios.post(`${API_URL}/host/vehicles/verify`, { vehicleNumber: number });
       applyRcPayload({ ...res.data, vehicleNumber: res.data.vehicleNumber || number });
       handleNext();
