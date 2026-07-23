@@ -348,8 +348,7 @@ const StepRc = ({ carDetails, applyRcPayload, handleNext }) => {
   const [image, setImage] = useState(null); // { uri, type, fileName }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  // Manual fallback shown when the scan fails: verify by registration number.
-  const [showManual, setShowManual] = useState(false);
+  // Verify-by-registration-number: an alternative to scanning the RC image.
   const [manualNumber, setManualNumber] = useState('');
   const [manualBusy, setManualBusy] = useState(false);
   const [manualError, setManualError] = useState('');
@@ -383,9 +382,7 @@ const StepRc = ({ carDetails, applyRcPayload, handleNext }) => {
       applyRcPayload(res.data);
       handleNext();
     } catch (e) {
-      setError(apiError(e, "Couldn't read that RC image. Please try a clearer photo."));
-      // Offer the number-based fallback so a failed scan isn't a dead end.
-      setShowManual(true);
+      setError(apiError(e, "Couldn't read that RC image. Please try a clearer photo, or verify by car number below."));
     } finally {
       setBusy(false);
     }
@@ -461,36 +458,41 @@ const StepRc = ({ carDetails, applyRcPayload, handleNext }) => {
           </View>
         ) : null}
 
-        {/* Manual fallback: verify by registration number when the scan fails. */}
-        {showManual ? (
-          <View style={{marginTop:16,backgroundColor:'#141416',borderRadius:12,borderWidth:1,borderColor:'#26262a',padding:14}}>
-            <CustomText fontType='primary' weight='Bold' style={{color:'#e3e3e3',fontSize:13}}>Verify by car number instead</CustomText>
-            <CustomText fontType='primary' weight='Regular' style={{color:'#757575',fontSize:12,marginTop:3,marginBottom:10}}>
-              Enter your car's registration number and we'll fetch the details.
-            </CustomText>
-            <View style={{flexDirection:'row',gap:8}}>
-              <TextInput
-                placeholder='e.g. TS09AB1234'
-                placeholderTextColor='#757575'
-                autoCapitalize='characters'
-                autoCorrect={false}
-                value={manualNumber}
-                onChangeText={(t) => { setManualNumber(t.toUpperCase()); setManualError(''); }}
-                style={{flex:1,backgroundColor:'#1c1c1e',borderRadius:5,paddingVertical:10,paddingHorizontal:12,color:'#fff',fontSize:14}}
-              />
-              <TouchableOpacity disabled={manualBusy || !manualNumber.trim()} onPress={verifyByNumber}
-                style={{backgroundColor: (manualBusy || !manualNumber.trim()) ? '#959595' : BRAND_COLOR,borderRadius:5,paddingHorizontal:16,justifyContent:'center',alignItems:'center',minWidth:92}}>
-                {manualBusy ? <ActivityIndicator size='small' color='#000' /> : (
-                  <CustomText fontType='primary' weight='Bold' style={{color:'#000',fontSize:11,textTransform:'uppercase',letterSpacing:-.15}}>Verify</CustomText>
-                )}
-              </TouchableOpacity>
-            </View>
-            {manualError ? (
-              <CustomText fontType='primary' weight='Medium' style={{color:'#ff8f8f',fontSize:12,marginTop:8}}>{manualError}</CustomText>
-            ) : null}
-            <CustomText fontType='primary' weight='Regular' style={{color:'#5a5a62',fontSize:11,marginTop:8}}>Only cars can be listed on COCARR.</CustomText>
+        {/* OR separator between uploading the RC and verifying by number. */}
+        <View style={{flexDirection:'row',alignItems:'center',gap:12,marginTop:22,marginBottom:6}}>
+          <View style={{flex:1,height:1,backgroundColor:'#26262a'}} />
+          <CustomText fontType='primary' weight='Bold' style={{color:'#5a5a62',fontSize:11,letterSpacing:1}}>OR</CustomText>
+          <View style={{flex:1,height:1,backgroundColor:'#26262a'}} />
+        </View>
+
+        {/* Verify by registration number (uses KYC vehicle-rc). */}
+        <View style={{marginTop:8,backgroundColor:'#141416',borderRadius:12,borderWidth:1,borderColor:'#26262a',padding:14}}>
+          <CustomText fontType='primary' weight='Bold' style={{color:'#e3e3e3',fontSize:13}}>Verify by car number</CustomText>
+          <CustomText fontType='primary' weight='Regular' style={{color:'#757575',fontSize:12,marginTop:3,marginBottom:10}}>
+            Enter your car's registration number and we'll fetch the details.
+          </CustomText>
+          <View style={{flexDirection:'row',gap:8}}>
+            <TextInput
+              placeholder='e.g. TS09AB1234'
+              placeholderTextColor='#757575'
+              autoCapitalize='characters'
+              autoCorrect={false}
+              value={manualNumber}
+              onChangeText={(t) => { setManualNumber(t.toUpperCase()); setManualError(''); }}
+              style={{flex:1,backgroundColor:'#1c1c1e',borderRadius:5,paddingVertical:10,paddingHorizontal:12,color:'#fff',fontSize:14}}
+            />
+            <TouchableOpacity disabled={manualBusy || !manualNumber.trim()} onPress={verifyByNumber}
+              style={{backgroundColor: (manualBusy || !manualNumber.trim()) ? '#959595' : BRAND_COLOR,borderRadius:5,paddingHorizontal:16,justifyContent:'center',alignItems:'center',minWidth:92}}>
+              {manualBusy ? <ActivityIndicator size='small' color='#000' /> : (
+                <CustomText fontType='primary' weight='Bold' style={{color:'#000',fontSize:11,textTransform:'uppercase',letterSpacing:-.15}}>Verify</CustomText>
+              )}
+            </TouchableOpacity>
           </View>
-        ) : null}
+          {manualError ? (
+            <CustomText fontType='primary' weight='Medium' style={{color:'#ff8f8f',fontSize:12,marginTop:8}}>{manualError}</CustomText>
+          ) : null}
+          <CustomText fontType='primary' weight='Regular' style={{color:'#5a5a62',fontSize:11,marginTop:8}}>Only cars can be listed on COCARR.</CustomText>
+        </View>
       </ScrollView>
 
       <TouchableOpacity disabled={!image || busy} onPress={submit} style={{backgroundColor: (!image || busy) ? '#959595' : BRAND_COLOR,borderRadius:8,paddingVertical:15,marginVertical:16}}>
