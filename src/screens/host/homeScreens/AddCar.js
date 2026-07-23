@@ -67,9 +67,9 @@ const AddCar = ({route}) => {
         } else if(response.data.isPreferencesAdded === undefined || response.data.isPreferencesAdded === false){
           console.log('step 4')
           setStep(4)
-        // } else if(response.data.isPricingAdded === undefined || response.data.isPricingAdded === false){
-        //   console.log('step 5')
-        //   setStep(5)
+        } else if(response.data.isPricingPlanAdded === undefined || response.data.isPricingPlanAdded === false){
+          console.log('step 5')
+          setStep(5)
         }
       } 
       setLoading(false);
@@ -93,8 +93,8 @@ const AddCar = ({route}) => {
         return <Step3 carDetails={data} handleChange={handleChange} handleNext={handleNext} />;
       case 4:
         return <Step4 carDetails={data} handleChange={handleChange} handleNext={handleNext} navigation={navigation}/>;
-      // case 5:
-      //   return <Step5 carDetails={data} handleChange={handleChange} navigation={navigation} />;
+      case 5:
+        return <Step5 carDetails={data} handleChange={handleChange} navigation={navigation} />;
       default:
         return null;
     }
@@ -661,7 +661,8 @@ const Step4 = ({ carDetails, handleChange, handleNext,navigation }) => {
     try {
       setSubmitLoading(true);
       const response = await axios.post(`${API_URL}/host/vehicles`, {step:4,vehicleId:carDetails.vehicleId,preferences:selectedPreferences});
-      navigation.navigate('HostCarInfo', {vehicleId:carDetails.vehicleId});
+      // Continue to pricing — skipping it left cars without a rate plan.
+      handleNext();
       setSubmitLoading(false);
     } catch (error) {
       setSubmitLoading(false);
