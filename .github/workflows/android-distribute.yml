@@ -3,10 +3,10 @@ name: Android · Distribute to Firebase
 # Builds a release APK and ships it to Firebase App Distribution only when a
 # pull request is merged into develop (or on manual dispatch).
 on:
-  pull_request:
-    types: [closed]
-    branches:
+  push:
+   branches:
       - develop
+      
   workflow_dispatch:
     inputs:
       release_notes:
