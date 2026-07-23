@@ -348,6 +348,11 @@ const StepRc = ({ carDetails, applyRcPayload, handleNext }) => {
   const [image, setImage] = useState(null); // { uri, type, fileName }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // Manual fallback shown when the scan fails: verify by registration number.
+  const [showManual, setShowManual] = useState(false);
+  const [manualNumber, setManualNumber] = useState('');
+  const [manualBusy, setManualBusy] = useState(false);
+  const [manualError, setManualError] = useState('');
 
   const pick = (launcher) => {
     launcher({ mediaType: 'photo', selectionLimit: 1, quality: 0.6 }, (response) => {
@@ -379,8 +384,27 @@ const StepRc = ({ carDetails, applyRcPayload, handleNext }) => {
       handleNext();
     } catch (e) {
       setError(apiError(e, "Couldn't read that RC image. Please try a clearer photo."));
+      // Offer the number-based fallback so a failed scan isn't a dead end.
+      setShowManual(true);
     } finally {
       setBusy(false);
+    }
+  };
+
+  // Fallback: verify by registration number against the RC records.
+  const verifyByNumber = async () => {
+    const number = manualNumber.trim().toUpperCase();
+    if (!number) return;
+    try {
+      setManualBusy(true);
+      setManualError('');
+      const res = await axios.post(`${API_URL}/host/vehicles/verify`, { vehicleNumber: number });
+      applyRcPayload({ ...res.data, vehicleNumber: res.data.vehicleNumber || number });
+      handleNext();
+    } catch (e) {
+      setManualError(apiError(e, 'Could not verify this registration number.'));
+    } finally {
+      setManualBusy(false);
     }
   };
 
@@ -434,6 +458,37 @@ const StepRc = ({ carDetails, applyRcPayload, handleNext }) => {
         {error ? (
           <View style={{marginTop:16,backgroundColor:'#2a1416',borderRadius:8,borderWidth:1,borderColor:'#5c2a2e',padding:12}}>
             <CustomText fontType='primary' weight='Medium' style={{color:'#ff8f8f',fontSize:12}}>{error}</CustomText>
+          </View>
+        ) : null}
+
+        {/* Manual fallback: verify by registration number when the scan fails. */}
+        {showManual ? (
+          <View style={{marginTop:16,backgroundColor:'#141416',borderRadius:12,borderWidth:1,borderColor:'#26262a',padding:14}}>
+            <CustomText fontType='primary' weight='Bold' style={{color:'#e3e3e3',fontSize:13}}>Verify by car number instead</CustomText>
+            <CustomText fontType='primary' weight='Regular' style={{color:'#757575',fontSize:12,marginTop:3,marginBottom:10}}>
+              Enter your car's registration number and we'll fetch the details.
+            </CustomText>
+            <View style={{flexDirection:'row',gap:8}}>
+              <TextInput
+                placeholder='e.g. TS09AB1234'
+                placeholderTextColor='#757575'
+                autoCapitalize='characters'
+                autoCorrect={false}
+                value={manualNumber}
+                onChangeText={(t) => { setManualNumber(t.toUpperCase()); setManualError(''); }}
+                style={{flex:1,backgroundColor:'#1c1c1e',borderRadius:5,paddingVertical:10,paddingHorizontal:12,color:'#fff',fontSize:14}}
+              />
+              <TouchableOpacity disabled={manualBusy || !manualNumber.trim()} onPress={verifyByNumber}
+                style={{backgroundColor: (manualBusy || !manualNumber.trim()) ? '#959595' : BRAND_COLOR,borderRadius:5,paddingHorizontal:16,justifyContent:'center',alignItems:'center',minWidth:92}}>
+                {manualBusy ? <ActivityIndicator size='small' color='#000' /> : (
+                  <CustomText fontType='primary' weight='Bold' style={{color:'#000',fontSize:11,textTransform:'uppercase',letterSpacing:-.15}}>Verify</CustomText>
+                )}
+              </TouchableOpacity>
+            </View>
+            {manualError ? (
+              <CustomText fontType='primary' weight='Medium' style={{color:'#ff8f8f',fontSize:12,marginTop:8}}>{manualError}</CustomText>
+            ) : null}
+            <CustomText fontType='primary' weight='Regular' style={{color:'#5a5a62',fontSize:11,marginTop:8}}>Only cars can be listed on COCARR.</CustomText>
           </View>
         ) : null}
       </ScrollView>

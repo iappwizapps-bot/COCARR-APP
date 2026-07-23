@@ -1,52 +1,51 @@
 import { Alert } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '../utils/constants';
-import { useDispatch } from 'react-redux';
+import { store } from '../store/store';
 import { updateFcmToken } from '../store/authSlice';
 
+// Called from an effect, not a component body, so it must NOT use hooks
+// (useDispatch here caused the "Invalid hook call" warning on launch). We
+// dispatch through the store instance directly instead.
 export const setupNotificationListeners = async () => {
-
-  const dispatch = useDispatch();
   try {
-    // Request permission and get token
     const authStatus = await messaging().requestPermission();
     const enabled =
-    authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-    authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-  if (enabled) {
-    console.log("Notification permission granted.");
-    const token = await messaging().getToken();
-    if (token) {
-      console.log("FCM Token:", token);
-      // await AsyncStorage.setItem("fcmToken", token);
-      dispatch(updateFcmToken({fcmToken:token}))
-      await axios.post(`${API_URL}/notification/`, { token });
+    if (enabled) {
+      let token;
+      try {
+        token = await messaging().getToken();
+      } catch (e) {
+        // No APNs token yet (e.g. iOS simulator or before registration) — not
+        // fatal, just skip registering the device this launch.
+        console.log('FCM getToken skipped:', e?.message);
+      }
+      if (token) {
+        store.dispatch(updateFcmToken({ fcmToken: token }));
+        try {
+          await axios.post(`${API_URL}/notification/`, { token });
+        } catch (e) {
+          console.log('Notification token registration failed:', e?.message);
+        }
+      }
     }
-  }
 
-  // Listen for foreground notifications
-  const unsubscribeForeground = messaging().onMessage(async (remoteMessage) => {
-    console.log("New Foreground Notification:", remoteMessage);
-    Alert.alert(remoteMessage.notification.title, remoteMessage.notification.body);
-  });
+    const unsubscribeForeground = messaging().onMessage(async (remoteMessage) => {
+      const n = remoteMessage?.notification;
+      if (n?.title || n?.body) Alert.alert(n.title || '', n.body || '');
+    });
 
-  // Listen for background notification clicks
-  messaging().onNotificationOpenedApp((remoteMessage) => {
-    console.log("User tapped on notification (Background):", remoteMessage);
-  });
+    messaging().onNotificationOpenedApp(() => {});
+    messaging().getInitialNotification().catch(() => {});
 
-  // Listen for killed-state notification clicks
-  messaging().getInitialNotification().then((remoteMessage) => {
-    if (remoteMessage) {
-      console.log("User tapped on notification (Killed State):", remoteMessage);
-    }
-  });
-
-  return unsubscribeForeground;
+    return unsubscribeForeground;
   } catch (error) {
-    console.error("Error setting up notification listeners:", error);
+    // Firebase/messaging not available (e.g. simulator without APNs) — keep the
+    // app quiet rather than surfacing a red-box or console error on launch.
+    console.log('Notification setup skipped:', error?.message);
   }
 };

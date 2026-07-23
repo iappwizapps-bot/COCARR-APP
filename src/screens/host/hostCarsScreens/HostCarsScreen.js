@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import LargeTitle from '../../../components/LargeTitle';
 import { View, Text, FlatList, StyleSheet, Image, ActivityIndicator, TouchableOpacity, Dimensions, ScrollView, RefreshControl } from 'react-native';
 import axios from 'axios';
 import { API_URL, BRAND_COLOR } from '../../../utils/constants';
@@ -126,7 +127,7 @@ export function HostCarsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* <HeaderBlock/> */}
+      <LargeTitle title="My Cars" />
       <TopPillBlock sort={sort} isFilterApplied={isFilterApplied} filters={filters} setShowSort={setShowSort} setShowFilter={setShowFilter} setFilters={setFilters}/>
       <FlatList 
         data={vehicles}

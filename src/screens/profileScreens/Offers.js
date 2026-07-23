@@ -1,4 +1,5 @@
 import axios from 'axios';
+import LargeTitle from '../../components/LargeTitle';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, FlatList, Alert, TextInput, Animated, ToastAndroid } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -55,7 +56,7 @@ export default function OffersScreen({ navigation,route }) {
 
   return (
     <View style={styles.container}>
-      <HeaderBlock title="Offers" showBackButton={true} navigation={navigation}/>
+      <LargeTitle title="Offers" subtitle="Deals and discounts for your rides" />
         {loading ? <SkeletonItem/> : 
       <View style={{flexDirection:'column',justifyContent:'flex-start'}}>
       {/* <View style={styles.inputContainer}>

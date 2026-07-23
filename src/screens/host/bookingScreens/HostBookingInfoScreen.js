@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, ActivityIndi
 import axios from 'axios';
 import { API_URL, BOOKING_BOOKED, BOOKING_FINISHED, BOOKING_ONGOING, BRAND_COLOR } from '../../../utils/constants';
 import { useDispatch, useSelector } from 'react-redux';
-import { formatDate } from '../../../utils/utils';
+import { formatDate, photoUrl } from '../../../utils/utils';
 import HeaderBlock from '../../../components/CenterHeader';
 import CustomText from '../../../components/CustomText';
 import Icon from 'react-native-vector-icons/AntDesign';
@@ -251,7 +251,7 @@ const UserInfo = ({userInfo}) => {
             <View style={{marginTop:28,flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',rowGap:16}}>
                 <View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-start',width:'100%'}}>
                       <View>
-                        <Image source={{uri:userInfo.profilePhoto}} style={{width:80,height:80,borderRadius:100}}/>
+                        <Image source={{uri:photoUrl(userInfo.profilePhoto)}} style={{width:80,height:80,borderRadius:100}}/>
                       </View>
                 </View>
                 <View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-start',width:'50%'}}>
@@ -310,7 +310,7 @@ const Overview = ({booking,setShowReview}) => {
               <View style={{flexDirection:'column',alignItems:'flex-start',justifyContent:'space-between',borderWidth:1,borderColor:'#EDBF3115',paddingHorizontal:16,paddingVertical:12,borderRadius:8,backgroundColor:'#EDBF3113'}}>
                 <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
               <View style={{flexDirection:'column', alignItems:'flex-start',backgroundColor:'#1c1c1e',borderRadius:40,width:40,height:40,justifyContent:'center',alignItems:'center',marginRight:12}}>
-              {booking.user?.profilePhoto && <Image source={{uri:booking.user?.profilePhoto}} style={{width:40, height:40, borderRadius:40}}/>}
+              {booking.user?.profilePhoto && <Image source={{uri:photoUrl(booking.user?.profilePhoto)}} style={{width:40, height:40, borderRadius:40}}/>}
             </View>
             <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',flex:1}}>
               <View>

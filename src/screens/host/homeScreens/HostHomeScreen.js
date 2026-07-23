@@ -65,9 +65,9 @@ export default function HostHomeScreen() {
 
         <ActiveAvailability navigation={navigator} refreshing={refreshing}/>
 
-        <MyBookings navigation={navigator} refreshing={refreshing}/>
+{/* Bookings live on their own tab now, so the home feed no longer lists them. */}
 
-{/* 
+{/*
             
           <WhyChooseCocarr/>
 
@@ -206,7 +206,6 @@ const MyCars = ({navigation,refreshing}) => {
       // }
     } catch (error) {
       console.log('error',error)
-      ToastAndroid.show('Error fetching top cars', ToastAndroid.SHORT)
     }
     
   }
@@ -262,78 +261,6 @@ const MyCars = ({navigation,refreshing}) => {
 }
 
 
-const MyBookings = ({navigation,refreshing}) => {
-
-  const [bookings, setBookings] = useState([])
-  const [status, setStatus] = useState(`${BOOKING_ONGOING}`)
-
-  const getMyBookings = async () => {
-    try {
-        const response = await axios.get(`${API_URL}/host/bookings?limit=6&sortBy=-createdAt&status=${status}`)
-        setBookings(response.data.bookings)
-    } catch (error) {
-      console.log('error',error)
-      ToastAndroid.show('Error fetching bookings', ToastAndroid.SHORT)
-    }
-    
-  }
-
-  useEffect(() => {
-    getMyBookings()
-  }, [status,refreshing])
-
-
-
-  return (
-    <View style={{flexDirection:'column', justifyContent:'space-between', paddingVertical:24,paddingHorizontal:16}}>
-      <View style={{flexDirection:'column', justifyContent:'space-between'}}> 
-          <CustomText fontType='primary' weight='Bold' style={{color:'#757575', fontSize:11,letterSpacing:.15,marginBottom:1,textTransform:'uppercase'}}>
-            My Bookings
-          </CustomText>
-
-      </View>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', paddingVertical:20,alignContent:"center"}}>
-      {
-        [{label:'Ongoing',value:BOOKING_ONGOING},{label:'Upcoming',value:BOOKING_BOOKED},{label:'Completed',value:BOOKING_FINISHED},{label:'User Cancelled',value:BOOKING_CANCELLED},{label:'Host Cancelled',value:BOOKING_CANCELLED}].map((item,index) => (
-          <TouchableOpacity key={index} activeOpacity={0.8} onPress={() => setStatus(item.value)} style={{paddingVertical:8,paddingHorizontal:18,backgroundColor:status === item.value ? '#EDBF313A' : '#1c1c1e',marginRight:6,borderRadius:24}}>
-                <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
-                    <Text style={{color:status === item.value ? BRAND_COLOR : '#757575',fontSize:10,fontWeight:'600',textTransform:'uppercase',letterSpacing:.15}}>{item.label}</Text>
-                </View>
-              </TouchableOpacity>
-        ))
-      }
-      </ScrollView>
-
-      
-          <ScrollView alwaysBounceHorizontal={true} horizontal showsHorizontalScrollIndicator={false} style={{flexDirection:'row'}}>
-              {bookings.map((booking,index) => (
-                <TouchableOpacity key={index} style={{marginRight: 16,marginLeft:0, backgroundColor:'#1c1c1e',borderRadius:10,width:260, overflow:'hidden'}} onPress={()=>navigation.navigate('HostBookingInfo', {bookingId:booking.id})}>
-                  <View style={{flexDirection:'row', alignItems:'center', justifyContent:'flex-start',paddingVertical:10,paddingHorizontal:12,borderBottomWidth:0,borderBottomColor:'#252525', backgroundColor:'#151519'}}>
-
-                  {booking.vehicle.images && booking.vehicle.images.length > 0 && <Image source={{uri:booking.vehicle.images[0].url}} style={{width:54, height:36, borderRadius:4,backgroundColor:'#2c2c2e',position:'relative'}}/>}
-                  <View style={{flexDirection:'column', justifyContent:'space-between', alignItems:'flex-start',paddingLeft:12}}>
-                    <CustomText fontType='primary' weight='Regular' style={{color:'#a3a3a3', fontSize:11}}>{booking.vehicle?.vehicleNumber}</CustomText>
-                    <CustomText  fontType='primary' weight='Regular' style={{color:'#e3e3e3', fontSize:10}}>{booking.vehicle?.vehicleName}</CustomText>
-                  </View>
-                  </View>
-                  <View style={{flexDirection:'column', justifyContent:'space-between', alignItems:'flex-start',paddingVertical:10,paddingHorizontal:12}}>
-                    <CustomText fontType='primary' weight='Regular' style={{color:'#e3e3e3', fontSize:11,marginBottom:4}}>From: {formatDate(booking.startTime)}</CustomText>
-                    <CustomText fontType='primary' weight='Regular' style={{color:'#e3e3e3', fontSize:11}}>To: {formatDate(booking.endTime)}</CustomText>
-                  </View>
-                  <View style={{flexDirection:'row', alignItems:'center', justifyContent:'space-between',paddingVertical:4,paddingHorizontal:12,borderTopWidth:1,borderTopColor:'#252525'}}>
-                  <CustomText fontType='primary' weight='Regular' style={{color:BRAND_COLOR, fontSize:10,backgroundColor:'#EDBF313A',paddingHorizontal:12,paddingVertical:4,borderRadius:4}}>{booking.deliveryType === 'self' ? 'Self Pickup/Drop' : 'Driver Pickup/Drop'}</CustomText>
-                    <FiveStar rating={booking.hostReview?.totalRating} onPress={()=>navigation.navigate('HostBookings', {screen:'BookingInfo',params:{bookingId:booking.bookingId}})} />
-                  </View>
-                    
-                </TouchableOpacity>
-              ))
-            }
-          </ScrollView>
-         
-        </View>
-  )
-}
 
 const ActiveAvailability = ({navigation,refreshing}) => {
 
@@ -346,7 +273,6 @@ const ActiveAvailability = ({navigation,refreshing}) => {
         setAvailabilities(response.data.schedules)
     } catch (error) {
       console.log('error',error)
-      ToastAndroid.show('Error fetching availability', ToastAndroid.SHORT)
     }
     
   }

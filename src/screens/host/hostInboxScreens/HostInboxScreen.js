@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import LargeTitle from '../../../components/LargeTitle';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Platform, Image, TouchableHighlight, ToastAndroid } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout, updateUserRole } from '../../../store/authSlice';
@@ -56,8 +57,9 @@ export function HostInboxScreen() {
 
   return (
     <View style={styles.container}>
+      <LargeTitle title="Inbox" />
       <View style={{flex:1}}>
-        <ScrollView style={{paddingHorizontal:20,paddingTop:16}} showsVerticalScrollIndicator={false}>
+        <ScrollView style={{paddingHorizontal:20,paddingTop:8}} showsVerticalScrollIndicator={false}>
 
 {/* 
         {options.map((option, index) => (

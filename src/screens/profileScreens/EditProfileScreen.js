@@ -89,7 +89,9 @@ export const EditProfileScreen = () => {
             timeout: 10000 // 10 second timeout
           });
   
-          profilePhotoUrl = urlRes.data.url + urlRes.data.fields.key;
+          // Store the API-proxied URL, not the raw private-bucket URL (which
+          // 403s when rendered directly). photoUrl() rewrites it to /image/:key.
+          profilePhotoUrl = photoUrl(urlRes.data.url + urlRes.data.fields.key);
         } catch (uploadError) {
           console.error('Error uploading to S3:', uploadError);
           if (uploadError.code === 'ECONNABORTED') {
