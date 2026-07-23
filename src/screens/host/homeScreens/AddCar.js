@@ -33,6 +33,30 @@ const asList = (payload, ...keys) => {
 const apiError = (error, fallback) =>
   error?.response?.data?.error || error?.response?.data?.message || error?.message || fallback;
 
+// Must match the filter values in CarsListingScreen — a mismatch means the
+// car never shows up under "By Vehicle Type" / "By Fuel Type".
+const VEHICLE_TYPES = [
+  { id: 'hatchback', name: 'Hatchback' },
+  { id: 'sedan', name: 'Sedan' },
+  { id: 'compact-suv', name: 'Compact SUV' },
+  { id: 'suv', name: 'SUV' },
+  { id: 'luxury', name: 'Luxury' },
+];
+const FUEL_TYPES = [
+  { id: 'petrol', name: 'Petrol' },
+  { id: 'diesel', name: 'Diesel' },
+  { id: 'electric', name: 'Electric' },
+];
+const TRANSMISSIONS = [
+  { id: 'manual', name: 'Manual' },
+  { id: 'automatic', name: 'Automatic' },
+];
+const SEAT_OPTIONS = [
+  { id: '4', name: '4/5 Seater' },
+  { id: '7', name: '7 Seater' },
+  { id: '8', name: '8 Seater' },
+];
+
 const TOTAL_STEPS = 6;
 const STEP_LABELS = {
   1: 'Step 1: Car Details',
@@ -140,6 +164,12 @@ const AddCar = ({route}) => {
     vehicleName: '',
     model: '',
     vehicleNumber: '',
+    vehicleYear: '',
+    vehicleType: '',
+    vehicleCc: '',
+    vehicleFuelType: '',
+    vehicleTransmission: 'manual',
+    vehicleSeats: '4',
     images: [],
     pickupPoint: '',
     preferences: [],
@@ -184,6 +214,12 @@ const AddCar = ({route}) => {
           vehicleNumber: response.data.vehicleNumber || prev.vehicleNumber,
           brandId: response.data.vehicleBrand || prev.brandId,
           brandName: response.data.brand?.name || prev.brandName,
+          vehicleYear: response.data.vehicleYear ? String(response.data.vehicleYear) : prev.vehicleYear,
+          vehicleType: response.data.vehicleType || prev.vehicleType,
+          vehicleCc: response.data.vehicleCc ? String(response.data.vehicleCc) : prev.vehicleCc,
+          vehicleFuelType: response.data.vehicleFuelType || prev.vehicleFuelType,
+          vehicleTransmission: response.data.vehicleTransmission || prev.vehicleTransmission,
+          vehicleSeats: response.data.vehicleSeats ? String(response.data.vehicleSeats) : prev.vehicleSeats,
         }));
         // The wizard no longer writes per step, so there's no partial state to
         // jump into — an older draft restarts at step 1 with its saved values
@@ -379,6 +415,38 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
         ) : null}
       </View>
 
+      <View style={{flexDirection:'row',gap:12,marginTop:20}}>
+        <View style={{flex:1}}>
+          <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>Year</CustomText>
+          <TextInput placeholder='e.g. 2021' keyboardType='number-pad' maxLength={4} style={{backgroundColor:'#1c1c1e',borderRadius:5,paddingVertical:9,paddingHorizontal:12,color:'#fff',fontSize:14}} value={carDetails.vehicleYear} onChangeText={(t) => handleChange('vehicleYear', t.replace(/[^0-9]/g, ''))} />
+        </View>
+        <View style={{flex:1}}>
+          <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>Engine (CC)</CustomText>
+          <TextInput placeholder='e.g. 1200' keyboardType='number-pad' maxLength={5} style={{backgroundColor:'#1c1c1e',borderRadius:5,paddingVertical:9,paddingHorizontal:12,color:'#fff',fontSize:14}} value={carDetails.vehicleCc} onChangeText={(t) => handleChange('vehicleCc', t.replace(/[^0-9]/g, ''))} />
+        </View>
+      </View>
+
+      <View style={{marginTop:20}}>
+        <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>Vehicle Type</CustomText>
+        <OptionPicker placeholder='Select Type' options={VEHICLE_TYPES} selectedId={carDetails.vehicleType} onSelect={(o) => handleChange('vehicleType', o.id)} searchable={false} />
+      </View>
+
+      <View style={{marginTop:20}}>
+        <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>Fuel Type</CustomText>
+        <OptionPicker placeholder='Select Fuel' options={FUEL_TYPES} selectedId={carDetails.vehicleFuelType} onSelect={(o) => handleChange('vehicleFuelType', o.id)} searchable={false} />
+      </View>
+
+      <View style={{flexDirection:'row',gap:12,marginTop:20}}>
+        <View style={{flex:1}}>
+          <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>Transmission</CustomText>
+          <OptionPicker placeholder='Select' options={TRANSMISSIONS} selectedId={carDetails.vehicleTransmission} onSelect={(o) => handleChange('vehicleTransmission', o.id)} searchable={false} />
+        </View>
+        <View style={{flex:1}}>
+          <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>Seats</CustomText>
+          <OptionPicker placeholder='Select' options={SEAT_OPTIONS} selectedId={carDetails.vehicleSeats} onSelect={(o) => handleChange('vehicleSeats', o.id)} searchable={false} />
+        </View>
+      </View>
+
       {verifyError ? (
         <View style={{marginTop:16,backgroundColor:'#2a1416',borderRadius:8,borderWidth:1,borderColor:'#5c2a2e',padding:12}}>
           <CustomText fontType='primary' weight='Medium' style={{color:'#ff8f8f',fontSize:12}}>{verifyError}</CustomText>
@@ -427,7 +495,7 @@ const Step1 = ({ carDetails, handleChange, handleNext }) => {
     <View style={{flexDirection:'column',justifyContent:'space-between',width:'100%',marginTop:20}}>
       {!verification && !carDetails.vehicleId ? (
         (() => {
-          const canVerify = !verifying && !submitLoading && !!carDetails.brandId && !!carDetails.cityId && !!carDetails.vehicleName && !!carDetails.vehicleNumber;
+          const canVerify = !verifying && !submitLoading && !!carDetails.brandId && !!carDetails.cityId && !!carDetails.vehicleName && !!carDetails.vehicleNumber && !!carDetails.vehicleYear && !!carDetails.vehicleCc && !!carDetails.vehicleType && !!carDetails.vehicleFuelType;
           return (
             <TouchableOpacity disabled={!canVerify} onPress={handleVerify} style={{backgroundColor: canVerify ? BRAND_COLOR : '#959595',borderRadius:5,paddingVertical:12,paddingHorizontal:12}}>
               {verifying || submitLoading ? (
@@ -952,6 +1020,12 @@ const Step6 = ({ carDetails, navigation }) => {
         cityId: carDetails.cityId,
         vehicleName: carDetails.vehicleName,
         model: carDetails.model,
+        vehicleYear: carDetails.vehicleYear,
+        vehicleType: carDetails.vehicleType,
+        vehicleCc: carDetails.vehicleCc,
+        vehicleFuelType: carDetails.vehicleFuelType,
+        vehicleTransmission: carDetails.vehicleTransmission,
+        vehicleSeats: carDetails.vehicleSeats,
         images: carDetails.images,
         pickup: carDetails.pickupPoint,
         preferences: carDetails.preferences,
@@ -991,6 +1065,12 @@ const Step6 = ({ carDetails, navigation }) => {
           <Row label='Name' value={carDetails.vehicleName} />
           <Row label='Model' value={carDetails.model} />
           <Row label='Registration' value={carDetails.vehicleNumber} />
+          <Row label='Year' value={carDetails.vehicleYear} />
+          <Row label='Type' value={VEHICLE_TYPES.find((t) => t.id === carDetails.vehicleType)?.name} />
+          <Row label='Engine' value={carDetails.vehicleCc ? `${carDetails.vehicleCc} cc` : null} />
+          <Row label='Fuel' value={FUEL_TYPES.find((f) => f.id === carDetails.vehicleFuelType)?.name} />
+          <Row label='Transmission' value={TRANSMISSIONS.find((t) => t.id === carDetails.vehicleTransmission)?.name} />
+          <Row label='Seats' value={SEAT_OPTIONS.find((o) => o.id === String(carDetails.vehicleSeats))?.name} />
         </Card>
 
         <Card title='Pickup'>
