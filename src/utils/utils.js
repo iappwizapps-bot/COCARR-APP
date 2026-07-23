@@ -4,7 +4,25 @@ import { Platform } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import Toast from "react-native-toast-message";
 import axios from "axios";
+import { API_URL } from "./constants";
 
+
+// Uploaded images live in a private bucket, so linking straight to the bucket
+// URL returns 403. Route those through the API's image proxy (GET /image/:key).
+// Local picker URIs and other hosts are returned untouched.
+export const photoUrl = (value) => {
+  if (!value || typeof value !== 'string') return value;
+  if (/^(file|content|ph|assets-library|data):/i.test(value)) return value;
+  if (value.startsWith(`${API_URL}/image/`)) return value;
+  if (/^https?:\/\//i.test(value)) {
+    const match = value.match(/^https?:\/\/([^/]+)\/(.+)$/);
+    if (match && match[1].endsWith('storageapi.dev')) {
+      return `${API_URL}/image/${match[2]}`;
+    }
+    return value;
+  }
+  return `${API_URL}/image/${value.replace(/^\/+/, '')}`;
+};
 
 export const UnauthAxios = () => {
   const instance = axios.create();

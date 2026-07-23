@@ -9,7 +9,7 @@ import axios from 'axios';
 import { API_URL } from '../../utils/constants';
 import { useDispatch } from 'react-redux';
 import { updateProfile } from '../../store/authSlice';
-import { UnauthAxios } from '../../utils/utils';
+import { UnauthAxios, photoUrl } from '../../utils/utils';
 export const EditProfileScreen = () => {
 
   const [info,setInfo] = useState({name:'',email:'',contactNumber:'',profilePhoto:''})
@@ -134,7 +134,7 @@ export const EditProfileScreen = () => {
       <View style={{flexDirection:'column', alignItems:'center', gap:12, marginBottom:24, paddingHorizontal:24,}}>
           <TouchableOpacity activeOpacity={0.85} onPress={pickImage} style={styles.avatarRing}>
               {profileImage?.uri ? (
-                <Image source={{uri: profileImage.uri}} style={styles.profileImage} />
+                <Image source={{uri: photoUrl(profileImage.uri)}} style={styles.profileImage} />
               ) : (
                 <CustomText fontType='primary' weight='Bold' style={styles.avatarInitial}>
                   {(info.name || 'U').charAt(0).toUpperCase()}
