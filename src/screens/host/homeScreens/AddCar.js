@@ -282,7 +282,6 @@ const AddCar = ({ route }) => {
       variant: payload.variant || prev.variant,
       color: payload.color || prev.color,
       locked: lockedFromRc(payload),
-      _maker: payload.maker || null,
     }));
   };
 
@@ -550,8 +549,8 @@ const StepDetails = ({ carDetails, handleChange, handleNext }) => {
       const list = asList(brandRes.value.data, 'brands');
       setBrands(list);
       // Pre-select the brand by the RC manufacturer name, if we can match it.
-      if (!carDetails.brandId && carDetails._maker) {
-        const maker = String(carDetails._maker).toLowerCase();
+      if (!carDetails.brandId && carDetails.maker) {
+        const maker = String(carDetails.maker).toLowerCase();
         const match = list.find((b) => maker.includes(String(b.name).toLowerCase().split(' ')[0]));
         if (match) { handleChange('brandId', match.id); handleChange('brandName', match.name); }
       }
