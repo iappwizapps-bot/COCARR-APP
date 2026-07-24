@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, FlatList, Alert, TextI
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { API_URL, BRAND_COLOR } from '../../../utils/constants';
-import { formatDate, formatExpiryDateandTime, formatTime } from '../../../utils/utils';
+import { formatDate, formatExpiryDateandTime, formatTime, notify } from '../../../utils/utils';
 import HeaderBlock from '../../../components/CenterHeader';
 import ActionSheet from 'react-native-actions-sheet';
 const BookingOfferScreen = ({ navigation,route }) => {
@@ -39,7 +39,7 @@ const BookingOfferScreen = ({ navigation,route }) => {
     } catch (error) {
         setError(error.message);
         console.log(error.message);
-        ToastAndroid.show('Failed to fetch offers',ToastAndroid.SHORT);
+        notify('Failed to fetch offers');
     }
   }
 

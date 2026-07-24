@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, ActivityIndi
 import axios from 'axios';
 import { API_URL, BOOKING_BOOKED, BOOKING_FINISHED, BRAND_COLOR } from '../../utils/constants';
 import { useDispatch, useSelector } from 'react-redux';
-import { formatDate, photoUrl } from '../../utils/utils';
+import { formatDate, photoUrl, notify } from '../../utils/utils';
 import HeaderBlock from '../../components/CenterHeader';
 import CustomText from '../../components/CustomText';
 import Icon from 'react-native-vector-icons/AntDesign';
@@ -70,9 +70,9 @@ export default function RideInfoScreen({ route,navigation }) {
   const onReschedule = () => {
     setShowReschedule(true);
     if(booking.isRescheduled) {
-      ToastAndroid.show('Booking is already rescheduled', ToastAndroid.SHORT);
+      notify('Booking is already rescheduled');
     } else if(new Date(booking.startTime) < new Date()) {
-      ToastAndroid.show('You cannot reschedule a ride after start time', ToastAndroid.SHORT);
+      notify('You cannot reschedule a ride after start time');
     } else {
       // setShowReschedule(true);
       navigation.navigate('RescheduleScreen',{id:booking.id});
@@ -89,7 +89,7 @@ export default function RideInfoScreen({ route,navigation }) {
                 navigation.navigate('StartBooking', {bookingId: booking.bookingId})
               } else {
                 navigation.navigate('StartBooking', {bookingId: booking.bookingId})
-                // ToastAndroid.show('Ride can be started only within 30 mins of start time', ToastAndroid.SHORT);
+                // notify('Ride can be started only within 30 mins of start time');
               }
     
   }

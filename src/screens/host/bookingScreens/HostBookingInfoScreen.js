@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, ActivityIndi
 import axios from 'axios';
 import { API_URL, BOOKING_BOOKED, BOOKING_FINISHED, BOOKING_ONGOING, BRAND_COLOR } from '../../../utils/constants';
 import { useDispatch, useSelector } from 'react-redux';
-import { formatDate, photoUrl } from '../../../utils/utils';
+import { formatDate, photoUrl, notify } from '../../../utils/utils';
 import HeaderBlock from '../../../components/CenterHeader';
 import CustomText from '../../../components/CustomText';
 import Icon from 'react-native-vector-icons/AntDesign';
@@ -63,7 +63,7 @@ export default function HostBookingInfoScreen({ route }) {
       setShowCancelRide(false);
     } catch (error) {
         console.log('error', error);
-        ToastAndroid.show('Something went wrong',ToastAndroid.SHORT);
+        notify('Something went wrong');
     }
   }
 

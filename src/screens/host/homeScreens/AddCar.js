@@ -543,12 +543,19 @@ const StepDetails = ({ carDetails, handleChange, handleNext }) => {
   };
   useEffect(() => { loadOptions(); }, []);
 
-  const canContinue = !!carDetails.brandId && !!carDetails.cityId && !!carDetails.vehicleName &&
+  // City is chosen on the Location step, so it isn't required here.
+  const canContinue = !!carDetails.brandId && !!carDetails.vehicleName &&
     !!carDetails.vehicleNumber && !!carDetails.vehicleYear && !!carDetails.vehicleCc &&
     !!carDetails.vehicleType && !!carDetails.vehicleFuelType;
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, paddingHorizontal: 16, paddingTop: 20 }}>
+    // Only pad on iOS; Android's windowSoftInputMode already resizes, and
+    // doubling up made the whole screen jump when a field was focused.
+    <KeyboardAvoidingView
+      style={{ flex: 1, paddingHorizontal: 16, paddingTop: 20 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 16 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps='handled'>
         <CustomText fontType='primary' weight='Bold' style={{color:'#e3e3e3',fontSize:18,letterSpacing:-.3}}>Confirm the details</CustomText>
         <CustomText fontType='primary' weight='Regular' style={{color:'#757575',fontSize:12,marginTop:4}}>
@@ -564,9 +571,8 @@ const StepDetails = ({ carDetails, handleChange, handleNext }) => {
           </View>
         ) : null}
 
-        {carDetails.ownerName ? (
-          <DetailField label='Owner' value={carDetails.ownerName} locked />
-        ) : null}
+        <DetailField label="Owner's Name" value={carDetails.ownerName} locked={!!locked.ownerName}
+          onChange={(t) => handleChange('ownerName', t)} placeholder="As printed on the RC" />
 
         <DetailField label='Registration Number' value={carDetails.vehicleNumber} locked={!!locked.vehicleNumber}
           onChange={(t) => handleChange('vehicleNumber', t.toUpperCase())} placeholder='e.g. TS09AB1234' />
@@ -574,11 +580,6 @@ const StepDetails = ({ carDetails, handleChange, handleNext }) => {
         <View style={{marginTop:18}}>
           <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>Vehicle Brand</CustomText>
           <OptionPicker placeholder={brands.length ? 'Select Brand' : 'Loading brands…'} options={brands} selectedId={carDetails.brandId} onSelect={(o) => { handleChange('brandId', o.id); handleChange('brandName', o.name); }} />
-        </View>
-
-        <View style={{marginTop:18}}>
-          <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>City</CustomText>
-          <OptionPicker placeholder={cities.length ? 'Select City' : 'Loading cities…'} options={cities} selectedId={carDetails.cityId} onSelect={(o) => { handleChange('cityId', o.id); handleChange('cityName', o.name); }} />
         </View>
 
         <DetailField label='Vehicle Name' value={carDetails.vehicleName} onChange={(t) => handleChange('vehicleName', t)} placeholder='e.g. Creta SX' />
@@ -669,7 +670,10 @@ const StepImages = ({ carDetails, handleChange, handleNext }) => {
     formData.append('acl', 'public-read');
     formData.append('file', { uri: asset.uri, type: asset.type, name: asset.fileName || 'photo.jpg' });
     await UnauthAxios().post(urlRes.data.url, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-    return urlRes.data.url + urlRes.data.fields.key;
+    // `url` is the bucket endpoint with no trailing slash and `key` is a bare
+    // UUID, so `url + key` was malformed (photos never rendered). The bucket
+    // is private, so return the API image-proxy URL built from the key.
+    return `${API_URL}/image/${urlRes.data.fields.key}`;
   };
 
   const submit = async () => {

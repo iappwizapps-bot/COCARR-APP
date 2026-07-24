@@ -8,7 +8,7 @@ import SimpleLineIcons from 'react-native-vector-icons/SimpleLineIcons'
 import { useNavigation } from '@react-navigation/native';
 import CustomText from '../../components/CustomText';
 import { API_URL, BRAND_COLOR } from '../../utils/constants';
-import { photoUrl } from '../../utils/utils';
+import { photoUrl, notify } from '../../utils/utils';
 import axios from 'axios';
 
 export function ProfileScreen() {
@@ -38,7 +38,7 @@ export function ProfileScreen() {
         setWalletInfo(walletInfo.data);
       } catch (error) {
         console.log('error',error);
-        ToastAndroid.show(`Error fetching wallet points: ${error.message}`,ToastAndroid.LONG);
+        notify(`Error fetching wallet points: ${error.message}`);
       }
     }
     getWalletPoints();

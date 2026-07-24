@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { API_URL, BRAND_COLOR } from '../../utils/constants';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
-import { formatDate } from '../../utils/utils';
+import { formatDate, notify } from '../../utils/utils';
 import { styles } from '../../style';
 import { updateUserRole } from '../../store/authSlice';
 
@@ -38,7 +38,7 @@ export default function HostScreen() {
     } catch (error) {
       setLoading(false);
       console.log(error);
-      ToastAndroid.show('Something went wrong', ToastAndroid.LONG);
+      notify('Something went wrong');
     }
     // eslint-disable-next-line
   }, [dispatch, navigator]);
@@ -65,7 +65,7 @@ export default function HostScreen() {
       }
     } catch (error) {
       console.log(error?.response?.data ?? error);
-      ToastAndroid.show('Something went wrong', ToastAndroid.LONG);
+      notify('Something went wrong');
     }
     // setLoading(false);
   }

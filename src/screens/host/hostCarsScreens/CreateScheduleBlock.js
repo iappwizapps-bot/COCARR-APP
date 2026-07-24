@@ -8,7 +8,7 @@ import { setDates, setSelectedCity, setShowCityLocation, setShowCityPicker } fro
 import CustomText from '../../../components/CustomText';
 import { API_URL, BRAND_COLOR } from '../../../utils/constants';
 import axios from 'axios';
-import { getCurrentLocation } from '../../../utils/utils';
+import { getCurrentLocation, photoUrl, notify } from '../../../utils/utils';
 import ActionSheet, { ScrollView } from 'react-native-actions-sheet';
 
 export function CreateScheduleBlockScreen({ route }) {
@@ -46,7 +46,7 @@ export function CreateScheduleBlockScreen({ route }) {
     } catch (error) {
       console.log('error',error)
       setLoading(false)
-      ToastAndroid.show('Something went wrong',ToastAndroid.SHORT)
+      notify('Something went wrong')
     }
   }
   // Round time to nearest 30 minutes
@@ -177,7 +177,7 @@ export function CreateScheduleBlockScreen({ route }) {
     } catch (error) {
       setSubmitLoading(false)
       console.log('error',error.response.data)
-      ToastAndroid.show(error.response.data?.error || 'Something went wrong',ToastAndroid.SHORT)
+      notify(error.response.data?.error || 'Something went wrong')
     }
   };
 
@@ -438,7 +438,7 @@ export function CreateScheduleBlockScreen({ route }) {
             <TouchableHighlight underlayColor='#090909' style={{borderRadius:8,paddingHorizontal:12,paddingVertical:4}} key={index} onPress={() => handleCarSelect(car)}>
                 <View style={{flexDirection:'row', justifyContent:'flex-start', alignItems:'center',alignContent:"center",width:'100%',marginVertical:8}}>
                     <View>
-                        <Image source={{uri:car.images[0].url}} style={{width:48, height:48, borderRadius:4,backgroundColor:'#2c2c2e',position:'relative'}}/>
+                        <Image source={{uri:photoUrl(car.images[0].url)}} style={{width:48, height:48, borderRadius:4,backgroundColor:'#2c2c2e',position:'relative'}}/>
                     </View>
                     <View style={{flexDirection:'column', justifyContent:'center', alignItems:'center',paddingLeft:12}}>
                         <CustomText fontType='primary' weight='SemiBold' style={{color:'#959595', fontSize:11,letterSpacing:-.15}}>{car.vehicleNumber}</CustomText>

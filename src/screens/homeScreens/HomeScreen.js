@@ -6,7 +6,7 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { API_URL, BRAND_COLOR } from '../../utils/constants';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
-import { convertToUnixTimestamp, formatDate, getCurrentLocation } from '../../utils/utils';
+import { convertToUnixTimestamp, formatDate, getCurrentLocation, notify } from '../../utils/utils';
 import CustomText from '../../components/CustomText';
 import { setSelectedCity, setShowCityLocation, setShowCityPicker } from '../../store/bookingSlice';
 import LocationChangeNotificationScreen from './LocationChangeNotificationScreen';
@@ -59,7 +59,7 @@ export default function HomeScreen() {
     } catch (error) {
       console.log('error',error)
       console.log('error',error.response.data)
-      ToastAndroid.show('Error fetching top cars', ToastAndroid.SHORT)
+      notify('Error fetching top cars')
     }
   }
 
@@ -119,7 +119,7 @@ export default function HomeScreen() {
       if (!selectedLocation) {
         await applyDefaultCity();
       } else {
-        ToastAndroid.show('Could not update your location', ToastAndroid.SHORT);
+        notify('Could not update your location');
       }
     } finally {
       setDetectingLocation(false)
@@ -171,7 +171,7 @@ export default function HomeScreen() {
       setRefreshing(false);
     } catch (error) {
       console.log(error)
-      ToastAndroid.show('Failed to fetch cars', ToastAndroid.SHORT);
+      notify('Failed to fetch cars');
       setRefreshing(false);
     }
   }

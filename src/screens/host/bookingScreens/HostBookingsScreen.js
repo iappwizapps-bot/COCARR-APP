@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, RefreshControl, ScrollView, TouchableHighlight } from 'react-native';
 import { API_URL, BOOKING_BOOKED, BRAND_COLOR } from '../../../utils/constants';
 import { useSelector } from 'react-redux';
-import { formatDate } from '../../../utils/utils';
+import { formatDate, photoUrl } from '../../../utils/utils';
 import HeaderBlock from '../../../components/CenterHeader';
 import { useNavigation } from '@react-navigation/native';
 import CustomText from '../../../components/CustomText';
@@ -112,7 +112,7 @@ export function HostBookingsScreen() {
       <TouchableHighlight underlayColor='#090909' style={{borderRadius:8,paddingHorizontal:12,paddingVertical:4}} key={index} onPress={() => handleCarFilterSelect(car)}>
         <View style={{flexDirection:'row', justifyContent:'flex-start', alignItems:'center',alignContent:"center",width:'100%',marginVertical:8}}>
             <View>
-                <Image source={{uri:car.images[0].url}} style={{width:48, height:48, borderRadius:4,backgroundColor:'#2c2c2e',position:'relative'}}/>
+                <Image source={{uri:photoUrl(car.images[0].url)}} style={{width:48, height:48, borderRadius:4,backgroundColor:'#2c2c2e',position:'relative'}}/>
             </View>
             <View style={{flexDirection:'column', justifyContent:'center', alignItems:'center',paddingLeft:12}}>
                 <CustomText fontType='primary' weight='SemiBold' style={{color:'#959595', fontSize:11,letterSpacing:-.15}}>{car.vehicleNumber}</CustomText>

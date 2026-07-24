@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, StatusBar, TouchableHighlight, ActivityIndicator, ToastAndroid, ScrollView, RefreshControl, Share } from 'react-native';
 import axios from 'axios';
 import { API_URL, BRAND_COLOR } from '../../utils/constants';
-import { formatDate } from '../../utils/utils';
+import { formatDate, notify } from '../../utils/utils';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import CustomText from '../../components/CustomText';
@@ -58,7 +58,7 @@ export default function ReferralPage() {
     await Share.share(shareOptions);
   } catch (error) {
     console.error('Error sharing referral message:', error);
-    ToastAndroid.show('Error sharing referral message. Please try again.', ToastAndroid.LONG);
+    notify('Error sharing referral message. Please try again.');
   }
   }
 

@@ -6,7 +6,7 @@ import { Link, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useSelector } from 'react-redux';
-import { convertToUnixTimestamp, formatDate } from '../../../utils/utils';
+import { convertToUnixTimestamp, formatDate, notify } from '../../../utils/utils';
 import ActionSheet from 'react-native-actions-sheet';
 import RazorpayCheckout from 'react-native-razorpay';
 import CustomText from '../../../components/CustomText';
@@ -136,7 +136,7 @@ export function CarsInfoScreen({route}) {
       const response = await axios.post(`${API_URL}/booking/initiate`,{deliveryType:deliveryType,startTime:convertToUnixTimestamp(startTime),endTime:convertToUnixTimestamp(endTime),userId:authInfo.uid,vehicleId:vehicle.id},{headers:{Authorization: `${authInfo.token}`}});
       await handlePayment(response.data.amount,response.data.orderId,response.data.prefills)
     } catch (err) {
-      ToastAndroid.show(err.message,ToastAndroid.SHORT);
+      notify(err.message);
     }
   }
 

@@ -10,7 +10,7 @@ import { useNavigation } from '@react-navigation/native';
 import CenterHeader from '../../../components/CenterHeader';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { formatDate, formatDateOnly, formatTime, UnauthAxios } from '../../../utils/utils';
+import { formatDate, formatDateOnly, formatTime, UnauthAxios, notify } from '../../../utils/utils';
 import { DateTimePickerModal } from '../../../components/host/DateTimePickerModal';
 import Select from '../../../components/Select';
 
@@ -64,7 +64,7 @@ export function HostDamageScreen({route}) {
             setBooking(response.data);
         } catch (error) {
             console.error('Error fetching booking data:', error.message);
-            ToastAndroid.show('Error', ToastAndroid.SHORT);
+            notify('Error');
         }
     }
     fetchData();
@@ -84,7 +84,7 @@ export function HostDamageScreen({route}) {
       );
       return granted === PermissionsAndroid.RESULTS.GRANTED;
     } catch (err) {
-      ToastAndroid.show('Camera Permission Denied',ToastAndroid.SHORT)
+      notify('Camera Permission Denied')
       return false;
     }
   };
@@ -94,7 +94,7 @@ export function HostDamageScreen({route}) {
     const hasPermission = await requestCameraPermission();
       
       if (!hasPermission) {
-        ToastAndroid.show('Camera permission denied', ToastAndroid.SHORT);
+        notify('Camera permission denied');
         return;
       }
 
@@ -163,7 +163,7 @@ export function HostDamageScreen({route}) {
     } catch (error) {
       console.log('error',error)
       console.error('Error uploading images:', error.response ? error.response.data : error.message);
-      ToastAndroid.show('Error uploading images', ToastAndroid.SHORT);
+      notify('Error uploading images');
       setSubmitting(false);
     }
   };

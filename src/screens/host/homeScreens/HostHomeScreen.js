@@ -6,13 +6,17 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { API_URL, BOOKING_BOOKED, BOOKING_CANCELLED, BOOKING_FINISHED, BOOKING_INITIATED, BOOKING_ONGOING, BRAND_COLOR } from '../../../utils/constants';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
-import { formatDate, formatDateOnly, formatTime, getCurrentLocation } from '../../../utils/utils';
+import { formatDate, formatDateOnly, formatTime, getCurrentLocation, photoUrl } from '../../../utils/utils';
 import CustomText from '../../../components/CustomText';
 import { setSelectedCity, setShowCityLocation, setShowCityPicker } from '../../../store/bookingSlice';
 import Carousel from 'react-native-reanimated-carousel';
 import FiveStar from '../../../components/host/FiveStar';
 // import Logo from '../../images/logo.png';
 // import { BottomSheet, BottomSheetView } from '@gorhom/bottom-sheet';
+// Cars awaiting admin approval surface first so hosts notice them.
+const rankCar = (v) => (v.isDraft ? 2 : v.isAdminApproved ? 1 : 0);
+const sortByApproval = (list) => [...(list || [])].sort((a, b) => rankCar(a) - rankCar(b));
+
 export default function HostHomeScreen() {
   const navigator = useNavigation()
   const authInfo = useSelector((state) => state.auth);
@@ -202,7 +206,7 @@ const MyCars = ({navigation,refreshing}) => {
       // if(refreshing){
         const response = await axios.get(`${API_URL}/host/vehicles?limit=6&sortBy=-createdAt`)
         console.log('response',response.data.vehicles)
-        setCars(response.data.vehicles ? response.data.vehicles : [])
+        setCars(sortByApproval(response.data.vehicles))
       // }
     } catch (error) {
       console.log('error',error)
@@ -242,7 +246,7 @@ const MyCars = ({navigation,refreshing}) => {
                   {car.isAdminApproved === false ? <View style={{paddingVertical:4,paddingHorizontal:8,position:'absolute',top:8,right:8,backgroundColor:'#EDBF31',borderRadius:4,zIndex:10}}>
                     <CustomText fontType='primary' weight='Bold' style={{color:'#000', fontSize:9,textTransform:'uppercase',letterSpacing:-.15 }}>Pending Approval</CustomText>
                   </View> : null}
-                  {car.images && car.images.length > 0 ? <Image source={{uri:car.images[0].url}} style={{width:160, height:100, borderRadius:10,borderBottomLeftRadius:0,borderBottomRightRadius:0,backgroundColor:'#2c2c2e',position:'relative',top:0,left:0,right:0,bottom:0}}/> : <View style={{width:160, height:100, borderRadius:10,borderBottomLeftRadius:0,borderBottomRightRadius:0,backgroundColor:'#2c2c2e',position:'relative',top:0,left:0,right:0,bottom:0}}>
+                  {car.images && car.images.length > 0 ? <Image source={{uri:photoUrl(car.images[0].url)}} style={{width:160, height:100, borderRadius:10,borderBottomLeftRadius:0,borderBottomRightRadius:0,backgroundColor:'#2c2c2e',position:'relative',top:0,left:0,right:0,bottom:0}}/> : <View style={{width:160, height:100, borderRadius:10,borderBottomLeftRadius:0,borderBottomRightRadius:0,backgroundColor:'#2c2c2e',position:'relative',top:0,left:0,right:0,bottom:0}}>
                     </View>
                     }
                   <View style={{flexDirection:'column', justifyContent:'space-between', alignItems:'flex-start',paddingVertical:10,paddingHorizontal:12}}>

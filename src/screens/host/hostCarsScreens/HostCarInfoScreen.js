@@ -5,7 +5,7 @@ import { API_URL, BRAND_COLOR } from '../../../utils/constants';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSelector } from 'react-redux';
-import { convertToUnixTimestamp, formatDate, UnauthAxios } from '../../../utils/utils';
+import { convertToUnixTimestamp, formatDate, UnauthAxios, photoUrl, notify } from '../../../utils/utils';
 import ActionSheet from 'react-native-actions-sheet';
 import RazorpayCheckout from 'react-native-razorpay';
 import CustomText from '../../../components/CustomText';
@@ -96,7 +96,7 @@ const CarImageBlock = ({vehicle}) => {
       <View style={{flex: 1}}>
         {vehicle.images && vehicle.images[0] && (
           <Image 
-            source={{uri: vehicle.images[0].url}}
+            source={{uri: photoUrl(vehicle.images[0].url)}}
             style={{
               flex: 1,
               borderRadius: 12,
@@ -211,14 +211,23 @@ const Availability = ({ vehicle }) => {
 
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
-      <TouchableOpacity
-        onPress={() => navigation.navigate('CreateSchedule', { vehicleId: vehicle.id })}
-        style={{ backgroundColor: '#EDBF3135', borderRadius: 8, paddingVertical: 14, alignItems: 'center', marginBottom: 16 }}
-      >
-        <CustomText fontType='primary' weight='Bold' style={{ color: BRAND_COLOR, fontSize: 11, textTransform: 'uppercase', letterSpacing: -0.15 }}>
-          + Add Schedule
-        </CustomText>
-      </TouchableOpacity>
+      {/* Scheduling only opens up once the car has been approved by admin. */}
+      {vehicle.isAdminApproved ? (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('CreateSchedule', { vehicleId: vehicle.id })}
+          style={{ backgroundColor: '#EDBF3135', borderRadius: 8, paddingVertical: 14, alignItems: 'center', marginBottom: 16 }}
+        >
+          <CustomText fontType='primary' weight='Bold' style={{ color: BRAND_COLOR, fontSize: 11, textTransform: 'uppercase', letterSpacing: -0.15 }}>
+            + Add Schedule
+          </CustomText>
+        </TouchableOpacity>
+      ) : (
+        <View style={{ backgroundColor: '#1c1c1e', borderRadius: 8, paddingVertical: 14, paddingHorizontal: 12, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: '#2c2c2e' }}>
+          <CustomText fontType='primary' weight='Medium' style={{ color: '#757575', fontSize: 12, textAlign: 'center' }}>
+            Scheduling unlocks once this car is approved.
+          </CustomText>
+        </View>
+      )}
 
       {loading ? (
         <ActivityIndicator size='small' color={BRAND_COLOR} />
@@ -317,10 +326,10 @@ const Images = ({ vehicle }) => {
     try {
       const response = await axios.put(`${API_URL}/host/vehicles/${vehicle.id}`, { type: 'images', images: images });
       setEdit(false);
-      ToastAndroid.show('Images updated successfully', ToastAndroid.SHORT);
+      notify('Images updated successfully');
     } catch (error) {
       console.error('Error submitting images:', error);
-      ToastAndroid.show('Error submitting images', ToastAndroid.SHORT);
+      notify('Error submitting images');
     }
   };
 
@@ -348,7 +357,7 @@ const Images = ({ vehicle }) => {
       return response.data.url + response.data.fields.key;
     } catch (error) {
       console.error('Error getting signed URL or uploading:', error.response ? error.response.data : error.message);
-      ToastAndroid.show('Error getting signed URL or uploading', ToastAndroid.SHORT);
+      notify('Error getting signed URL or uploading');
       return null;
     }
   };
@@ -412,7 +421,7 @@ const Images = ({ vehicle }) => {
                 <CustomText fontType='primary' weight='SemiBold' style={{ color: '#000', fontSize: 9, textTransform: 'uppercase', letterSpacing: .15 }}>Set as Cover</CustomText>
               </TouchableOpacity>
             )}
-            <Image source={{ uri: image.url }} resizeMode='cover' style={{ width: '100%', height: '100%', borderRadius: 4 }} />
+            <Image source={{ uri: photoUrl(image.url) }} resizeMode='cover' style={{ width: '100%', height: '100%', borderRadius: 4 }} />
           </View>
         ))}
         {edit && (
@@ -443,10 +452,10 @@ const Preferences = ({vehicle}) => {
     try {
       const response = await axios.put(`${API_URL}/host/vehicles/${vehicle.id}`, {type:'preference',preferences:selectedPreferences});
       setEdit(false);
-      ToastAndroid.show('Preferences updated successfully', ToastAndroid.SHORT);
+      notify('Preferences updated successfully');
     } catch (error) {
       console.error('Error submitting preferences:', error);
-      ToastAndroid.show('Error submitting preferences', ToastAndroid.SHORT);
+      notify('Error submitting preferences');
     }
   }
 
@@ -518,7 +527,7 @@ const Info = ({vehicle}) => {
             <View style={{marginTop:28,flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',rowGap:24}}>
 
                 {info.map((item,index)=>(
-                  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-start',width:'50%'}}>
+                  <View key={item.title || index} style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-start',width:'50%'}}>
                       <View>
                         <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575',fontSize:10,textTransform:'uppercase',letterSpacing:.15}}>{item.title}</CustomText>
                         {item.title !== 'Pickup Point' ? <CustomText fontType='primary' weight='Regular' style={{color:'#e3e3e3',fontSize:14,textTransform:'capitalize'}}>{item.value}</CustomText> : <TouchableOpacity onPress={() => Linking.openURL(item.value)}><CustomText fontType='primary' weight='Regular' style={{color:'#e3e3e3',fontSize:14,textTransform:'capitalize',textDecorationLine:'underline'}}>Open Map</CustomText></TouchableOpacity>}
@@ -594,11 +603,11 @@ const UpdateInfo = ({ vehicle,show,setShow }) => {
     {
       const response = await axios.put(`${API_URL}/host/vehicles/${vehicle.id}`, {type:'info',data:info});
       setShow(false);
-      ToastAndroid.show('Info updated successfully', ToastAndroid.SHORT);
+      notify('Info updated successfully');
     } catch (error) {
 
       console.error('Error submitting car details:', error);
-      ToastAndroid.show('Error submitting car details', ToastAndroid.SHORT);
+      notify('Error submitting car details');
     }
   }
           
@@ -700,10 +709,10 @@ const UpdatePlan = ({vehicle,show,setShow }) => {
     try {
       const response = await axios.put(`${API_URL}/host/vehicles/${vehicle.id}`, {type:'pricingPlan',vehiclePlan:plan});
       setShow(false);
-      ToastAndroid.show('Pricing updated successfully', ToastAndroid.SHORT);
+      notify('Pricing updated successfully');
     } catch (error) {
       console.error('Error submitting pricing:', error.message);
-      ToastAndroid.show('Error submitting pricing', ToastAndroid.SHORT);
+      notify('Error submitting pricing');
     }
   }
 

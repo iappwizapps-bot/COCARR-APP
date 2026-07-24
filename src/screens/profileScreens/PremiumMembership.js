@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, StatusBar, TouchableHighlight, ActivityIndicator, ToastAndroid, ScrollView, RefreshControl } from 'react-native';
 import axios from 'axios';
 import { API_URL, BRAND_COLOR } from '../../utils/constants';
-import { formatDate } from '../../utils/utils';
+import { formatDate, notify } from '../../utils/utils';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import CustomText from '../../components/CustomText';
@@ -49,7 +49,7 @@ export default function PremiumMembershipScreen() {
       const response = await axios.post(`${API_URL}/membership/initiate`);
       await handlePayment(response.data.amount,response.data.orderId,response.data.prefills)
     } catch (err) {
-      ToastAndroid.show(err.message,ToastAndroid.SHORT);
+      notify(err.message);
     }
   }
 
@@ -93,9 +93,9 @@ export default function PremiumMembershipScreen() {
         setShowPaymentResult(null);
       }, 2000);
       if (error.code === 'PAYMENT_CANCELLED') {
-        ToastAndroid.show('Payment Cancelled', ToastAndroid.SHORT);
+        notify('Payment Cancelled');
       } else {
-        ToastAndroid.show('Payment Failed', ToastAndroid.SHORT);
+        notify('Payment Failed');
         console.error('Payment Error:', error);
       }
     }

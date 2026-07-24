@@ -12,7 +12,7 @@ import CenterHeader from '../../../components/CenterHeader';
 import { DateTimePickerModal } from '../../../components/host/DateTimePickerModal';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { UnauthAxios } from '../../../utils/utils';
+import { UnauthAxios, notify } from '../../../utils/utils';
 
 export function HostBankPage({route}) {
   const navigation = useNavigation();
@@ -36,7 +36,7 @@ export function HostBankPage({route}) {
               setBankInfo(response.data);
           } catch (error) {
               console.error('Error fetching booking data:', error.message);
-              ToastAndroid.show('Error', ToastAndroid.SHORT);
+              notify('Error');
           }
       }
 
@@ -52,7 +52,7 @@ export function HostBankPage({route}) {
       await fetchData();
     } catch (error) {
       console.error('Error updating bank details:', error.message);
-      ToastAndroid.show('Error', ToastAndroid.SHORT);
+      notify('Error');
     }
   }
 

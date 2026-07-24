@@ -5,7 +5,7 @@ import axios from 'axios';
 import { API_URL, BRAND_COLOR } from '../../utils/constants';
 
 import CustomText from '../../components/CustomText';
-import { formatDate } from '../../utils/utils';
+import { formatDate, notify } from '../../utils/utils';
 import { Calendar } from 'react-native-calendars';
 import Header from '../../components/CenterHeader';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -38,7 +38,7 @@ const {id} = route.params;
         {
             setIsLoading(false);
             // setShowReschedule(null);
-            ToastAndroid.show('Error', error.message);
+            notify('Error', error.message);
         }
     }
     getRescheduleSummary();
@@ -119,7 +119,7 @@ const {id} = route.params;
         } catch (err) {
             setSubmitting(false);
           console.log('error',err)
-        //   ToastAndroid.show(err.response?.data?.error?.message,ToastAndroid.SHORT);
+        //   ToastAndroid.show(err.response?.data?.error?.message);
         }
       }
     

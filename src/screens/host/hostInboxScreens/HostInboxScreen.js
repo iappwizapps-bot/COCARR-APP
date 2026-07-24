@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { notify } from '../../../utils/utils';
 import LargeTitle from '../../../components/LargeTitle';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Platform, Image, TouchableHighlight, ToastAndroid } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -39,7 +40,7 @@ export function HostInboxScreen() {
         setWalletInfo(walletInfo.data);
       } catch (error) {
         console.log('error',error);
-        ToastAndroid.show(`Error fetching wallet points: ${error.message}`,ToastAndroid.LONG);
+        notify(`Error fetching wallet points: ${error.message}`);
       }
     }
     getWalletPoints();

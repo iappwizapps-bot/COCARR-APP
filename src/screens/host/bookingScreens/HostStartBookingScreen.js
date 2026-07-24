@@ -12,7 +12,7 @@ import CenterHeader from '../../../components/CenterHeader';
 // import { DateTimePickerModal } from '../../../components/host/DateTimePickerModal';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { formatDate, formatDateOnly, formatTime, UnauthAxios } from '../../../utils/utils';
+import { formatDate, formatDateOnly, formatTime, UnauthAxios, notify } from '../../../utils/utils';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
 import { DateTimePickerModal } from '../../../components/host/DateTimePickerModal';
 
@@ -41,7 +41,7 @@ export function HostStartBookingScreen({route}) {
             setBooking(response.data);
         } catch (error) {
             console.error('Error fetching booking data:', error.message);
-            ToastAndroid.show('Error', ToastAndroid.SHORT);
+            notify('Error');
         }
     }
 
@@ -64,7 +64,7 @@ export function HostStartBookingScreen({route}) {
             actionSheetRef.current.hide();
         } catch (error) {
             console.error('Error submitting review:', error.message);
-            ToastAndroid.show('Error', ToastAndroid.SHORT);
+            notify('Error');
         }
         setIsLoading(false);
   };
@@ -124,7 +124,7 @@ const onSubmit = async () => {
       navigation.navigate('HostBookingInfo', {bookingId:bookingId});
   } catch (error) {
     console.error('Error uploading images:', error.response ? error.response.data : error.message);
-    ToastAndroid.show('Error uploading images', ToastAndroid.SHORT);
+    notify('Error uploading images');
   }
 };
 

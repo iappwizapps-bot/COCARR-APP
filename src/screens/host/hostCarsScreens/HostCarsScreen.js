@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import FontAwesomeOld from 'react-native-vector-icons/FontAwesome';
 import { useSelector } from 'react-redux';
-import { formatDate } from '../../../utils/utils';
+import { formatDate, photoUrl } from '../../../utils/utils';
 import ActionSheet,{ScrollView as ActionSheetScrollView } from 'react-native-actions-sheet';
 import Carousel from 'react-native-reanimated-carousel';
 import LinearGradient from 'react-native-linear-gradient';
@@ -17,6 +17,10 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome6';
 import CustomText from '../../../components/CustomText';
 import Slider from '@react-native-community/slider';
 import Octicons from 'react-native-vector-icons/Octicons';
+
+// Cars awaiting admin approval surface first so hosts notice them.
+const rankCar = (v) => (v.isDraft ? 2 : v.isAdminApproved ? 1 : 0);
+const sortByApproval = (list) => [...(list || [])].sort((a, b) => rankCar(a) - rankCar(b));
 
 export function HostCarsScreen() {
   const [vehicles, setVehicles] = useState([]);
@@ -51,7 +55,7 @@ export function HostCarsScreen() {
       let queryParams = ''
 
       const response = await axios.get(`${API_URL}/host/vehicles?offset=0&limit=30&sortBy=${sort}`);
-      setVehicles(response.data.vehicles);
+      setVehicles(sortByApproval(response.data.vehicles));
       console.log('response.data',response.data)
       setLoading(false);
       setRefreshing(false);
@@ -105,7 +109,7 @@ export function HostCarsScreen() {
     // console.log('item',item)
 
     return  <TouchableOpacity key={index} onPress={()=>navigation.navigate('HostCarInfo', {vehicleId:car.id})} style={{marginRight: 16,marginLeft:0, backgroundColor:'#1c1c1e',borderRadius:10,flexDirection:'row',width:'100%',marginBottom:16,overflow:'hidden'}}>
-    {car.images && car.images.length > 0 && <Image source={{uri:car.images[0].url}} style={{width:100, height:80, backgroundColor:'#2c2c2e',position:'relative',top:0,left:0,right:0,bottom:0}}/>}
+    {car.images && car.images.length > 0 && <Image source={{uri:photoUrl(car.images[0].url)}} style={{width:100, height:80, backgroundColor:'#2c2c2e',position:'relative',top:0,left:0,right:0,bottom:0}}/>}
     <View style={{flexDirection:'column', justifyContent:'center', alignItems:'flex-start',paddingVertical:10,paddingHorizontal:12}}>
       <CustomText fontType='primary' weight='Medium' style={{color:'#a3a3a3', fontSize:10}}>{car.vehicleNumber}</CustomText>
       <CustomText fontType='primary' weight='Regular' style={{color:'#e3e3e3', fontSize:12}}>{car.brand?.name} {car.vehicleName}</CustomText>

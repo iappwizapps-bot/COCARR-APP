@@ -15,7 +15,7 @@ import { API_URL, BRAND_COLOR } from '../../utils/constants';
 import axios from 'axios';
 import LocationInvalidScreen from './LocationInvalidScreen';
 import LocationChangeNotificationScreen from './LocationChangeNotificationScreen';
-import { getCurrentLocation } from '../../utils/utils';
+import { getCurrentLocation, notify } from '../../utils/utils';
 
 export function DatePickerScreen({ visible, onClose, onSelect }) {
     const bookingState = useSelector((state) => state.booking);
@@ -316,7 +316,7 @@ export function DatePickerScreen({ visible, onClose, onSelect }) {
     } catch (error) {
       console.log(error)
       setDetectingLocation(false)
-      ToastAndroid.show('Failed to detect location', ToastAndroid.SHORT);
+      notify('Failed to detect location');
     }
   }
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, StatusBar, TouchableHighlight, ActivityIndicator, ToastAndroid, ScrollView, RefreshControl } from 'react-native';
 import axios from 'axios';
 import { API_URL, BRAND_COLOR } from '../../utils/constants';
-import { formatDate } from '../../utils/utils';
+import { formatDate, notify } from '../../utils/utils';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import CustomText from '../../components/CustomText';
@@ -40,7 +40,7 @@ const getTransactions = async () => {
       setRefreshing(false);
     } catch (error) {
       setError(true);
-      ToastAndroid.show('Something went wrong. Please try again later.');
+      notify('Something went wrong. Please try again later.');
       setLoading(false);
       setRefreshing(false);
     }

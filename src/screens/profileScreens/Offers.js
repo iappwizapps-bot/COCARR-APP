@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, FlatList, Alert, TextI
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { API_URL, BRAND_COLOR } from '../../utils/constants';
-import { formatDate, formatExpiryDateandTime } from '../../utils/utils';
+import { formatDate, formatExpiryDateandTime, notify } from '../../utils/utils';
 import HeaderBlock from '../../components/CenterHeader';
 import ActionSheet from 'react-native-actions-sheet';
 import CustomText from '../../components/CustomText';
@@ -35,7 +35,7 @@ export default function OffersScreen({ navigation,route }) {
       setLoading(false);
     } catch (error) {
       setLoading(false);
-      ToastAndroid.show(error.message,ToastAndroid.SHORT);
+      notify(error.message);
       console.log('error', error);
     }
   };

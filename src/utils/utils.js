@@ -1,6 +1,6 @@
 import moment from "moment";
 import { request, PERMISSIONS, RESULTS, openSettings } from 'react-native-permissions';
-import { Platform } from 'react-native';
+import { Platform, ToastAndroid, Alert } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import Toast from "react-native-toast-message";
 import axios from "axios";
@@ -10,6 +10,16 @@ import { API_URL } from "./constants";
 // Uploaded images live in a private bucket, so linking straight to the bucket
 // URL returns 403. Route those through the API's image proxy (GET /image/:key).
 // Local picker URIs and other hosts are returned untouched.
+// ToastAndroid is Android-only — calling it on iOS throws
+// "ToastAndroid is not supported on this platform". Use this everywhere
+// instead: a toast on Android, a lightweight alert on iOS.
+export const notify = (message) => {
+  if (!message) return;
+  const text = String(message);
+  if (Platform.OS === 'android') ToastAndroid.show(text, ToastAndroid.SHORT);
+  else Alert.alert('', text);
+};
+
 export const photoUrl = (value) => {
   if (!value || typeof value !== 'string') return value;
   if (/^(file|content|ph|assets-library|data):/i.test(value)) return value;

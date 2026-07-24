@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, ActivityIndi
 import axios from 'axios';
 import { API_URL, BRAND_COLOR } from '../../../utils/constants';
 import { useDispatch, useSelector } from 'react-redux';
-import { formatDate } from '../../../utils/utils';
+import { formatDate, notify } from '../../../utils/utils';
 import HeaderBlock from '../../../components/CenterHeader';
 import CustomText from '../../../components/CustomText';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -47,7 +47,7 @@ export default function ScheduleInfoScreen({ route,navigation }) {
       navigation.replace('HostTab');
     } catch (error) {
       console.log('error', error);
-      ToastAndroid.show(error.message,ToastAndroid.LONG);
+      notify(error.message);
     }
   }
 
@@ -59,7 +59,7 @@ export default function ScheduleInfoScreen({ route,navigation }) {
       await getScheduleInfo();
     } catch (error) {
       console.log('error', error);
-      ToastAndroid.show(error.message,ToastAndroid.LONG);
+      notify(error.message);
     }
   }
 

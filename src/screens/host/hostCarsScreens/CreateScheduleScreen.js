@@ -8,7 +8,7 @@ import { setDates, setSelectedCity, setShowCityLocation, setShowCityPicker } fro
 import CustomText from '../../../components/CustomText';
 import { API_URL, BRAND_COLOR } from '../../../utils/constants';
 import axios from 'axios';
-import { getCurrentLocation } from '../../../utils/utils';
+import { getCurrentLocation, photoUrl, notify } from '../../../utils/utils';
 import ActionSheet, { ScrollView } from 'react-native-actions-sheet';
 
 export function CreateScheduleScreen({ route }) {
@@ -158,7 +158,7 @@ export function CreateScheduleScreen({ route }) {
     } catch (error) {
       setSubmitLoading(false)
       console.log('error',error.response.data)
-      ToastAndroid.show(error.response.data?.error || 'Something went wrong',ToastAndroid.SHORT)
+      notify(error.response.data?.error || 'Something went wrong')
     }
   };
 
@@ -406,7 +406,7 @@ export function CreateScheduleScreen({ route }) {
                 <View style={{flexDirection:'row', justifyContent:'flex-start', alignItems:'center',alignContent:"center",width:'100%',marginVertical:8}}>
                     <View>
                         {car.images[0]?.url ? (
-                          <Image source={{uri:car.images[0].url}} style={{width:48, height:48, borderRadius:4,backgroundColor:'#2c2c2e',position:'relative'}}/>
+                          <Image source={{uri:photoUrl(car.images[0].url)}} style={{width:48, height:48, borderRadius:4,backgroundColor:'#2c2c2e',position:'relative'}}/>
                         ) : null}
                     </View>
                     <View style={{flexDirection:'column', justifyContent:'center', alignItems:'center',paddingLeft:12}}>

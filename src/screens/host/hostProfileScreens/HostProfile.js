@@ -8,7 +8,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import SimpleLineIcons from 'react-native-vector-icons/SimpleLineIcons'
 import { useNavigation } from '@react-navigation/native';
-import { photoUrl } from '../../../utils/utils';
+import { photoUrl, notify } from '../../../utils/utils';
 import CustomText from '../../../components/CustomText';
 import { API_URL, BRAND_COLOR } from '../../../utils/constants';
 import axios from 'axios';
@@ -40,7 +40,7 @@ export function HostProfile() {
         setWalletInfo(walletInfo.data);
       } catch (error) {
         console.log('error',error);
-        ToastAndroid.show(`Error fetching wallet points: ${error.message}`,ToastAndroid.LONG);
+        notify(`Error fetching wallet points: ${error.message}`);
       }
     }
     getWalletPoints();

@@ -5,7 +5,7 @@ import { API_URL, BRAND_COLOR } from '../../../utils/constants';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSelector } from 'react-redux';
-import { convertToUnixTimestamp, formatDate } from '../../../utils/utils';
+import { convertToUnixTimestamp, formatDate, notify } from '../../../utils/utils';
 import ActionSheet from 'react-native-actions-sheet';
 import RazorpayCheckout from 'react-native-razorpay';
 import CustomText from '../../../components/CustomText';
@@ -52,7 +52,7 @@ export function CarsPaymentScreen({route}) {
         // setLoading(false);
       setExclusiveOffers(response.data.appliedOffers);
     } catch (error) {
-      ToastAndroid.show(error.message,ToastAndroid.SHORT);
+      notify(error.message);
     }
   }
 
@@ -154,7 +154,7 @@ export function CarsPaymentScreen({route}) {
       await handlePayment(response.data.amount,response.data.orderId,response.data.prefills)
     } catch (err) {
       console.log('error',err)
-      ToastAndroid.show(err.response?.data?.error?.message,ToastAndroid.SHORT);
+      notify(err.response?.data?.error?.message);
     }
   }
 
