@@ -815,7 +815,12 @@ const StepLocation = ({ carDetails, handleChange, handleNext }) => {
     setLocationText(place.description || '');
     setChecking(true);
     try {
-      const res = await axios.post(`${API_URL}/utility/validate-place`, { placeId: place.place_id, cityId: selectedCity.id });
+      // The controller reads placeId/cityId from the query string, so send them
+      // as params (not a JSON body) — otherwise the request hangs with no reply.
+      const res = await axios.post(`${API_URL}/utility/validate-place`, null, {
+        params: { placeId: place.place_id, cityId: selectedCity.id },
+        timeout: 15000,
+      });
       const loc = res.data?.info?.geometry?.location;
       const addr = res.data?.info?.formatted_address || place.description;
       if (res.data.isCityChanged && res.data.city) { setSelectedCity(res.data.city); handleChange('cityId', res.data.city.id); handleChange('cityName', res.data.city.name); }
