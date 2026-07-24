@@ -428,8 +428,16 @@ const StepRc = ({ carDetails, applyRcPayload, handleChange, handleNext }) => {
   };
 
   return (
-    <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 20, justifyContent: 'space-between' }}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
+    // "Verify by car number" sits at the very bottom of this scroll, so without
+    // a KeyboardAvoidingView the keyboard covered the input it belongs to.
+    // Matches StepDetails: pad on iOS only, since Android's windowSoftInputMode
+    // already resizes and doubling up makes the screen jump.
+    <KeyboardAvoidingView
+      style={{ flex: 1, paddingHorizontal: 16, paddingTop: 20, justifyContent: 'space-between' }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }} keyboardShouldPersistTaps='handled'>
         <CustomText fontType='primary' weight='Bold' style={{color:'#e3e3e3',fontSize:18,letterSpacing:-.3}}>Upload your Vehicle RC</CustomText>
         <CustomText fontType='primary' weight='Regular' style={{color:'#757575',fontSize:12,marginTop:4}}>
           Take a photo of the RC card like the sample below. We'll read the details for you.
@@ -522,7 +530,7 @@ const StepRc = ({ carDetails, applyRcPayload, handleChange, handleNext }) => {
           <CustomText fontType='primary' weight='Bold' style={{color:'#000',fontSize:12,textTransform:'uppercase',letterSpacing:-.15,textAlign:'center'}}>Scan & Continue</CustomText>
         )}
       </TouchableOpacity>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -1026,39 +1034,64 @@ const StepPreferences = ({ carDetails, handleChange, handleNext }) => {
 };
 
 // ── Step 6: Pricing ───────────────────────────────────────────────────────────
-const StepPricing = ({ carDetails, handleChange, handleNext }) => {
-  const Field = ({ label, field, placeholder }) => (
-    <>
-      <CustomText fontType='primary' weight='Bold' style={{ color: '#959595', fontSize: 11, letterSpacing: .15, marginBottom: 4, textTransform: 'uppercase' }}>{label}</CustomText>
-      <TextInput
-        style={{ backgroundColor: '#1c1c1e', color: '#e3e3e3', padding: 12, borderRadius: 8, marginBottom: 16 }}
-        placeholder={placeholder}
-        placeholderTextColor='#757575'
-        keyboardType='numeric'
-        value={carDetails[field]}
-        onChangeText={(value) => handleChange(field, value.replace(/[^0-9]/g, ''))}
-      />
-    </>
-  );
+// Declared at module scope, NOT inside StepPricing. A component defined in the
+// parent's body gets a new function identity on every render, so React treats it
+// as a different component type, unmounts the old TextInput and mounts a fresh
+// one — which drops focus and dismisses the keyboard after each character typed.
+const PricingField = ({ label, field, placeholder, value, onChange }) => (
+  <>
+    <CustomText fontType='primary' weight='Bold' style={{ color: '#959595', fontSize: 11, letterSpacing: .15, marginBottom: 4, textTransform: 'uppercase' }}>{label}</CustomText>
+    <TextInput
+      style={{ backgroundColor: '#1c1c1e', color: '#e3e3e3', padding: 12, borderRadius: 8, marginBottom: 16 }}
+      placeholder={placeholder}
+      placeholderTextColor='#757575'
+      keyboardType='numeric'
+      value={value != null ? String(value) : ''}
+      onChangeText={(v) => onChange(field, v.replace(/[^0-9]/g, ''))}
+    />
+  </>
+);
 
+const StepPricing = ({ carDetails, handleChange, handleNext }) => {
   const canContinue = carDetails.kmAlloted && carDetails.perHourFee && carDetails.weekdayPricing && carDetails.weekendPricing;
 
   return (
-    <View style={{ padding: 16, flex: 1, justifyContent: 'space-between' }}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Field label='Alloted KMs' field='kmAlloted' placeholder='Enter alloted km' />
-        <Field label='Extra KM Pricing' field='perHourFee' placeholder='Enter extra km pricing' />
-        <Field label='Weekday Pricing (per hour)' field='weekdayPricing' placeholder='Enter weekday pricing' />
-        <Field label='Weekend Pricing (per hour)' field='weekendPricing' placeholder='Enter weekend pricing' />
+    <KeyboardAvoidingView
+      style={{ padding: 16, flex: 1, justifyContent: 'space-between' }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
+      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps='handled'>
+        <PricingField label='Alloted KMs' field='kmAlloted' placeholder='Enter alloted km' value={carDetails.kmAlloted} onChange={handleChange} />
+        <PricingField label='Extra KM Pricing' field='perHourFee' placeholder='Enter extra km pricing' value={carDetails.perHourFee} onChange={handleChange} />
+        <PricingField label='Weekday Pricing (per hour)' field='weekdayPricing' placeholder='Enter weekday pricing' value={carDetails.weekdayPricing} onChange={handleChange} />
+        <PricingField label='Weekend Pricing (per hour)' field='weekendPricing' placeholder='Enter weekend pricing' value={carDetails.weekendPricing} onChange={handleChange} />
       </ScrollView>
       <TouchableOpacity disabled={!canContinue} onPress={handleNext} style={{ backgroundColor: canContinue ? BRAND_COLOR : '#959595', borderRadius: 8, paddingVertical: 15, marginTop: 20 }}>
         <CustomText fontType='primary' weight='Bold' style={{ color: '#000', fontSize: 12, textTransform: 'uppercase', letterSpacing: -0.15, textAlign: 'center' }}>Review Listing</CustomText>
       </TouchableOpacity>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
 // ── Step 7: Review & publish ──────────────────────────────────────────────────
+// Hoisted out of StepReview for the same reason as PricingField: nested
+// definitions remount their whole subtree on every parent render, which made the
+// review images reload from scratch each time.
+const Row = ({ label, value }) => (
+  <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',paddingVertical:7,gap:16}}>
+    <CustomText fontType='primary' weight='Regular' style={{color:'#757575',fontSize:12}}>{label}</CustomText>
+    <CustomText fontType='primary' weight='Medium' style={{color:'#e3e3e3',fontSize:12,flexShrink:1,textAlign:'right'}}>{value || '—'}</CustomText>
+  </View>
+);
+
+const Card = ({ title, children }) => (
+  <View style={{backgroundColor:'#1c1c1e',borderRadius:10,padding:14,marginBottom:12}}>
+    <CustomText fontType='primary' weight='Bold' style={{color:'#959595',fontSize:10,textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>{title}</CustomText>
+    {children}
+  </View>
+);
+
 const StepReview = ({ carDetails, navigation }) => {
   const [busy, setBusy] = useState(false);
   const prefs = carDetails.preferences || {};
@@ -1067,19 +1100,6 @@ const StepReview = ({ carDetails, navigation }) => {
     prefs.selfPickup && 'Self pickup',
     prefs.deliverAvailable && 'Delivery',
   ].filter(Boolean);
-
-  const Row = ({ label, value }) => (
-    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',paddingVertical:7,gap:16}}>
-      <CustomText fontType='primary' weight='Regular' style={{color:'#757575',fontSize:12}}>{label}</CustomText>
-      <CustomText fontType='primary' weight='Medium' style={{color:'#e3e3e3',fontSize:12,flexShrink:1,textAlign:'right'}}>{value || '—'}</CustomText>
-    </View>
-  );
-  const Card = ({ title, children }) => (
-    <View style={{backgroundColor:'#1c1c1e',borderRadius:10,padding:14,marginBottom:12}}>
-      <CustomText fontType='primary' weight='Bold' style={{color:'#959595',fontSize:10,textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>{title}</CustomText>
-      {children}
-    </View>
-  );
 
   const publish = async () => {
     try {
