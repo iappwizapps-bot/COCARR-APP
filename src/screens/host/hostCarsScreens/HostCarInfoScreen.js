@@ -476,7 +476,7 @@ const Preferences = ({vehicle}) => {
       <View>
 
            {preferences.map((preference) => (
-             <View key={preference.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical:16 ,borderBottomWidth:1,borderBottomColor:'#1c1c1e',width:'100%'}}>
+             <View key={preference.value} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical:16 ,borderBottomWidth:1,borderBottomColor:'#1c1c1e',width:'100%'}}>
           <View style={{flexDirection:'column',justifyContent:'center',alignItems:'flex-start',flex:1}}>
             <CustomText fontType='primary' weight='Medium' style={{color:'#e3e3e3', fontSize:14,letterSpacing:.15,marginBottom:2}}>{preference.name}</CustomText>
             <CustomText fontType='primary' weight='Regular' style={{color:'#757575', fontSize:12,letterSpacing:.15}}>{preference.description}</CustomText>
@@ -507,15 +507,18 @@ const Preferences = ({vehicle}) => {
 const Info = ({vehicle}) => {
   const [show,setShow] = useState(false);
   const info = [
-    {title:'Brand Name',value:vehicle.brand?.name},
-    {title:'Model Name',value:vehicle.vehicleName},
+    // Titles double as React keys below, so every entry must be distinct —
+    // Fuel Type / Seats / Year were each listed twice, which is what produced
+    // the "two children with the same key" warning.
+    {title:'Owner Name',value:vehicle.ownerName},
+    {title:'Maker',value:vehicle.vehicleMaker},
+    {title:'Model',value:vehicle.model},
+    {title:'Name',value:vehicle.vehicleName},
     {title:'Year',value:vehicle.vehicleYear},
+    {title:'Color',value:vehicle.vehicleColor},
     {title:'Fuel Type',value:vehicle.vehicleFuelType},
     {title:'Seats',value:vehicle.vehicleSeats},
     {title:'Transmission',value:vehicle.vehicleTransmission},
-    {title:'Fuel Type',value:vehicle.vehicleFuelType},
-    {title:'Vehicle Seats',value:vehicle.vehicleSeats},
-    {title:'Vehicle Year',value:vehicle.vehicleYear},
     {title:'City',value:vehicle.pickupPoint?.city?.name},
     {title:'Pickup Point',value: vehicle.pickupPoint ? `https://www.google.com/maps/search/?api=1&query=${vehicle.pickupPoint.lat},${vehicle.pickupPoint.long}` : ''},
     {title:'Status',value:vehicle.status},

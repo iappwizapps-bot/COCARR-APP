@@ -1,4 +1,4 @@
-import { Alert, Platform } from 'react-native';
+import { Alert } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import axios from 'axios';
 import { API_URL } from '../utils/constants';
@@ -10,13 +10,11 @@ import { updateFcmToken } from '../store/authSlice';
 // dispatch through the store instance directly instead.
 export const setupNotificationListeners = async () => {
   try {
-    // iOS must be registered for remote messages before an FCM token can be
-    // issued — skipping this is what produces the classic
-    // "No APNS token specified before fetching FCM Token" registration error.
-    if (Platform.OS === 'ios' && !messaging().isDeviceRegisteredForRemoteMessages) {
-      await messaging().registerDeviceForRemoteMessages();
-    }
-
+    // No explicit registerDeviceForRemoteMessages() call: react-native-firebase
+    // registers iOS for remote messages automatically, and calling it manually
+    // is deprecated (it logged a warning banner on every launch). If the APNs
+    // token isn't ready yet, getToken() below fails softly and the next launch
+    // retries.
     const authStatus = await messaging().requestPermission();
     const enabled =
       authStatus === messaging.AuthorizationStatus.AUTHORIZED ||

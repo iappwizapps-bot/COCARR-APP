@@ -45,21 +45,31 @@ export default function HomeScreen() {
 
   const getCars = async () => {
     try {
+      // The booking window is persisted, so on a later launch it is usually in
+      // the past. `new Date(...)` is truthy even for an invalid or stale date,
+      // so the old `!startTime` guard never fired and the API rejected the
+      // request (MINIMUM_START_TIME / INVALID_RIDE_DURATION) — which is what
+      // surfaced as the "Error fetching top cars" popup on every cold start.
+      const MIN_LEAD_MS = 6 * 60 * 60 * 1000;      // API needs pickup >= 3h out
+      const MIN_DURATION_MS = 12 * 60 * 60 * 1000; // API needs ride >= 12h
+      const earliestStart = new Date(Date.now() + MIN_LEAD_MS);
+
       let startTime = new Date(startDateTime);
+      if (isNaN(startTime.getTime()) || startTime < earliestStart) startTime = earliestStart;
+
       let endTime = new Date(endDateTime);
-      console.log('startTime',startTime)
-      console.log('endTime',endTime)
-      if (!startTime || !endTime) {
-        startTime = new Date(Date.now() + (6 * 60 * 60 * 1000)); // 6 hours from now
-        endTime = new Date(startTime.getTime() + (12 * 60 * 60 * 1000)); // 12 hours from startTime
+      if (isNaN(endTime.getTime()) || endTime.getTime() - startTime.getTime() < MIN_DURATION_MS) {
+        endTime = new Date(startTime.getTime() + MIN_DURATION_MS);
       }
 
       const response = await axios.get(`${API_URL}/vehicle?startTime=${convertToUnixTimestamp(startTime)}&endTime=${convertToUnixTimestamp(endTime)}&offset=${0}&limit=${10}&city=${selectedCity.id}&sortBy=rating`)
       setCars(response.data.vehicles)
     } catch (error) {
-      console.log('error',error)
-      console.log('error',error.response.data)
-      notify('Error fetching top cars')
+      // Background fetch for the home carousel — a failure should leave the
+      // list empty, not throw a modal over whatever screen the user is on.
+      // (`error.response` is undefined when the request never reached the
+      // server, so reading `.data` off it used to crash the handler.)
+      console.log('Error fetching top cars:', error?.response?.data || error?.message);
     }
   }
 

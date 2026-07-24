@@ -92,8 +92,15 @@ function RootNavigator() {
         authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
       if (enabled) {
-        const fcmToken = await messaging().getToken();
-        console.log('FCM Token:', fcmToken);
+        let fcmToken;
+        try {
+          fcmToken = await messaging().getToken();
+        } catch (e) {
+          // iOS has no APNs token yet (simulator, or registration still in
+          // flight on a cold start). Not fatal — the next launch retries.
+          console.log('FCM getToken skipped:', e?.message);
+          return;
+        }
 
         if (idToken) {
           await axios.post(
@@ -106,7 +113,8 @@ function RootNavigator() {
         console.log('Notification permission not granted');
       }
     } catch (error) {
-      console.error('FCM Token Registration Error:', error);
+      // Messaging being unavailable must not raise a red box on launch.
+      console.log('FCM token registration skipped:', error?.message);
     }
   }
 
