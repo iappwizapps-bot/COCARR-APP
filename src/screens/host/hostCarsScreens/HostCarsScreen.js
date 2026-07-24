@@ -113,8 +113,24 @@ export function HostCarsScreen() {
     <View style={{flexDirection:'column', justifyContent:'center', alignItems:'flex-start',paddingVertical:10,paddingHorizontal:12}}>
       <CustomText fontType='primary' weight='Medium' style={{color:'#a3a3a3', fontSize:10}}>{car.vehicleNumber}</CustomText>
       <CustomText fontType='primary' weight='Regular' style={{color:'#e3e3e3', fontSize:12}}>{car.brand?.name} {car.vehicleName}</CustomText>
-      <View style={{flexDirection:'row', alignItems:'flex-end', justifyContent:'flex-end'}}>
-        <CustomText fontType='primary' weight='Medium' style={{color:'#a3a3a3', fontSize:11}}>Available (1 Pause)</CustomText>
+      {/* Status chip beside the details — never over the photo. */}
+      <View style={{flexDirection:'row', alignItems:'center', marginTop:5}}>
+        {car.isDraft ? (
+          <View style={{flexDirection:'row',alignItems:'center',gap:5,backgroundColor:'#26262a',borderWidth:1,borderColor:'#3a3a40',borderRadius:100,paddingVertical:2,paddingHorizontal:8}}>
+            <View style={{width:5,height:5,borderRadius:5,backgroundColor:'#b9b9c2'}} />
+            <CustomText fontType='primary' weight='Bold' style={{color:'#b9b9c2', fontSize:9,letterSpacing:.15}}>Not Completed</CustomText>
+          </View>
+        ) : car.isAdminApproved === false ? (
+          <View style={{flexDirection:'row',alignItems:'center',gap:5,backgroundColor:'#EDBF3122',borderWidth:1,borderColor:'#EDBF3166',borderRadius:100,paddingVertical:2,paddingHorizontal:8}}>
+            <View style={{width:5,height:5,borderRadius:5,backgroundColor:BRAND_COLOR}} />
+            <CustomText fontType='primary' weight='Bold' style={{color:BRAND_COLOR, fontSize:9,letterSpacing:.15}}>Pending Approval</CustomText>
+          </View>
+        ) : (
+          <View style={{flexDirection:'row',alignItems:'center',gap:5,backgroundColor:'#3fce8f22',borderWidth:1,borderColor:'#3fce8f59',borderRadius:100,paddingVertical:2,paddingHorizontal:8}}>
+            <View style={{width:5,height:5,borderRadius:5,backgroundColor:'#6ee6b0'}} />
+            <CustomText fontType='primary' weight='Bold' style={{color:'#6ee6b0', fontSize:9,letterSpacing:.15}}>Live</CustomText>
+          </View>
+        )}
       </View>
     </View>
   </TouchableOpacity>

@@ -240,16 +240,28 @@ const MyCars = ({navigation,refreshing}) => {
                     // navigation.navigate('HostCars', {params:{vehicleId:car.id},screen:'HostCarInfo'})
                   }
                 }}>
-                  {car.isDraft === true ? <View style={{paddingVertical:4,paddingHorizontal:8,position:'absolute',top:8,right:8,backgroundColor:'#EDBF31',borderRadius:4,zIndex:10}}>
-                    <CustomText fontType='primary' weight='Bold' style={{color:'#000', fontSize:9,textTransform:'uppercase',letterSpacing:-.15 }}>Not Completed</CustomText>
-                  </View> : null}
-                  {car.isAdminApproved === false ? <View style={{paddingVertical:4,paddingHorizontal:8,position:'absolute',top:8,right:8,backgroundColor:'#EDBF31',borderRadius:4,zIndex:10}}>
-                    <CustomText fontType='primary' weight='Bold' style={{color:'#000', fontSize:9,textTransform:'uppercase',letterSpacing:-.15 }}>Pending Approval</CustomText>
-                  </View> : null}
                   {car.images && car.images.length > 0 ? <Image source={{uri:photoUrl(car.images[0].url)}} style={{width:160, height:100, borderRadius:10,borderBottomLeftRadius:0,borderBottomRightRadius:0,backgroundColor:'#2c2c2e',position:'relative',top:0,left:0,right:0,bottom:0}}/> : <View style={{width:160, height:100, borderRadius:10,borderBottomLeftRadius:0,borderBottomRightRadius:0,backgroundColor:'#2c2c2e',position:'relative',top:0,left:0,right:0,bottom:0}}>
                     </View>
                     }
                   <View style={{flexDirection:'column', justifyContent:'space-between', alignItems:'flex-start',paddingVertical:10,paddingHorizontal:12}}>
+                    {/* Status sits below the photo, not over it, so it stays
+                        readable against any image. */}
+                    {car.isDraft === true ? (
+                      <View style={{flexDirection:'row',alignItems:'center',gap:5,backgroundColor:'#26262a',borderWidth:1,borderColor:'#3a3a40',borderRadius:100,paddingVertical:2,paddingHorizontal:8,marginBottom:5}}>
+                        <View style={{width:5,height:5,borderRadius:5,backgroundColor:'#b9b9c2'}} />
+                        <CustomText fontType='primary' weight='Bold' style={{color:'#b9b9c2', fontSize:9,letterSpacing:.15}}>Not Completed</CustomText>
+                      </View>
+                    ) : car.isAdminApproved === false ? (
+                      <View style={{flexDirection:'row',alignItems:'center',gap:5,backgroundColor:'#EDBF3122',borderWidth:1,borderColor:'#EDBF3166',borderRadius:100,paddingVertical:2,paddingHorizontal:8,marginBottom:5}}>
+                        <View style={{width:5,height:5,borderRadius:5,backgroundColor:BRAND_COLOR}} />
+                        <CustomText fontType='primary' weight='Bold' style={{color:BRAND_COLOR, fontSize:9,letterSpacing:.15}}>Pending Approval</CustomText>
+                      </View>
+                    ) : (
+                      <View style={{flexDirection:'row',alignItems:'center',gap:5,backgroundColor:'#3fce8f22',borderWidth:1,borderColor:'#3fce8f59',borderRadius:100,paddingVertical:2,paddingHorizontal:8,marginBottom:5}}>
+                        <View style={{width:5,height:5,borderRadius:5,backgroundColor:'#6ee6b0'}} />
+                        <CustomText fontType='primary' weight='Bold' style={{color:'#6ee6b0', fontSize:9,letterSpacing:.15}}>Live</CustomText>
+                      </View>
+                    )}
                     <CustomText fontType='primary' weight='Regular' style={{color:'#e3e3e3', fontSize:11}}>{car.brand?.name} {car.vehicleName}</CustomText>
                     <View style={{flexDirection:'row', alignItems:'flex-end', justifyContent:'flex-end',marginTop:4}}>
                       <CustomText fontType='primary' weight='Medium' style={{color:'#a3a3a3', fontSize:11}}>{car.vehicleNumber}</CustomText>
