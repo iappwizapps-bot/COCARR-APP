@@ -88,6 +88,9 @@ const lockedFromRc = (payload) => {
   mark('vehicleNumber', payload?.vehicleNumber);
   mark('ownerName', payload?.ownerName);
   mark('model', payload?.model);
+  mark('maker', payload?.maker);
+  mark('variant', payload?.variant);
+  mark('color', payload?.color);
   mark('vehicleYear', specs.vehicleYear);
   mark('vehicleType', specs.vehicleType);
   mark('vehicleCc', specs.vehicleCc);
@@ -296,6 +299,10 @@ const AddCar = ({ route }) => {
           vehicleFuelType: response.data.vehicleFuelType || prev.vehicleFuelType,
           vehicleTransmission: response.data.vehicleTransmission || prev.vehicleTransmission,
           vehicleSeats: response.data.vehicleSeats ? String(response.data.vehicleSeats) : prev.vehicleSeats,
+          ownerName: response.data.ownerName || prev.ownerName,
+          maker: response.data.vehicleMaker || prev.maker,
+          variant: response.data.vehicleVariant || prev.variant,
+          color: response.data.vehicleColor || prev.color,
         }));
       }
       setLoading(false);
@@ -590,6 +597,20 @@ const StepDetails = ({ carDetails, handleChange, handleNext }) => {
 
         <DetailField label='Vehicle Name' value={carDetails.vehicleName} onChange={(t) => handleChange('vehicleName', t)} placeholder='e.g. Creta SX' />
         <DetailField label='Model' value={carDetails.model} locked={!!locked.model} onChange={(t) => handleChange('model', t)} placeholder='e.g. Creta' />
+
+        <DetailField label='Maker (as per RC)' value={carDetails.maker} locked={!!locked.maker}
+          onChange={(t) => handleChange('maker', t)} placeholder='e.g. HYUNDAI MOTOR INDIA LTD' />
+
+        <View style={{flexDirection:'row',gap:12}}>
+          <View style={{flex:1}}>
+            <DetailField label='Variant' value={carDetails.variant} locked={!!locked.variant}
+              onChange={(t) => handleChange('variant', t)} placeholder='e.g. SX(O)' />
+          </View>
+          <View style={{flex:1}}>
+            <DetailField label='Colour' value={carDetails.color} locked={!!locked.color}
+              onChange={(t) => handleChange('color', t)} placeholder='e.g. White' />
+          </View>
+        </View>
 
         <View style={{flexDirection:'row',gap:12}}>
           <View style={{flex:1}}>
@@ -1112,6 +1133,9 @@ const StepReview = ({ carDetails, navigation }) => {
           <Row label='Brand' value={carDetails.brandName} />
           <Row label='Name' value={carDetails.vehicleName} />
           <Row label='Model' value={carDetails.model} />
+          <Row label='Maker' value={carDetails.maker} />
+          <Row label='Variant' value={carDetails.variant} />
+          <Row label='Colour' value={carDetails.color} />
           <Row label='Registration' value={carDetails.vehicleNumber} />
           <Row label='Owner' value={carDetails.ownerName} />
           <Row label='Year' value={carDetails.vehicleYear} />
