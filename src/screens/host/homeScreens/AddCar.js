@@ -234,6 +234,9 @@ const AddCar = ({ route }) => {
     maker: '',
     variant: '',
     color: '',
+    registrationDate: '',
+    rcStatus: '',
+    insuranceUpto: '',
     rcImageUrl: null,
     locked: {},
     images: [],
@@ -272,6 +275,9 @@ const AddCar = ({ route }) => {
       engineNumber: payload.engineNumber || prev.engineNumber,
       chassisNumber: payload.chassisNumber || prev.chassisNumber,
       rcImageUrl: payload.rcImageUrl || prev.rcImageUrl,
+      registrationDate: payload.registrationDate || prev.registrationDate,
+      rcStatus: payload.rcStatus || prev.rcStatus,
+      insuranceUpto: payload.insuranceUpto || prev.insuranceUpto,
       maker: payload.maker || prev.maker,
       variant: payload.variant || prev.variant,
       color: payload.color || prev.color,
@@ -641,6 +647,25 @@ const StepDetails = ({ carDetails, handleChange, handleNext }) => {
             <OptionPicker placeholder='Select' options={SEAT_OPTIONS} selectedId={carDetails.vehicleSeats} onSelect={(o) => handleChange('vehicleSeats', o.id)} searchable={false} disabled={!!locked.vehicleSeats} />
           </View>
         </View>
+
+        {carDetails.registrationDate || carDetails.rcStatus || carDetails.insuranceUpto ? (
+          <View style={{marginTop:22,backgroundColor:'#101010',borderRadius:10,padding:14}}>
+            <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:8}}>
+              <Icon name='lock-closed' size={11} color='#757575' />
+              <CustomText fontType='primary' weight='Bold' style={{color:'#757575',fontSize:10,textTransform:'uppercase',letterSpacing:.5}}>From the RC record</CustomText>
+            </View>
+            {[
+              ['Registered on', carDetails.registrationDate],
+              ['RC status', carDetails.rcStatus],
+              ['Insurance upto', carDetails.insuranceUpto],
+            ].filter(([, v]) => v).map(([label, value]) => (
+              <View key={label} style={{flexDirection:'row',justifyContent:'space-between',paddingVertical:4}}>
+                <CustomText fontType='primary' weight='Regular' style={{color:'#757575',fontSize:12}}>{label}</CustomText>
+                <CustomText fontType='primary' weight='Medium' style={{color:'#c9c9c9',fontSize:12}}>{String(value)}</CustomText>
+              </View>
+            ))}
+          </View>
+        ) : null}
 
         {carDetails.engineNumber || carDetails.chassisNumber ? (
           <View style={{flexDirection:'row',gap:12}}>
