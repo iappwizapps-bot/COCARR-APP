@@ -303,7 +303,7 @@ const AddCar = ({ route }) => {
 
   const renderStep = () => {
     switch (step) {
-      case 1: return <StepRc carDetails={data} applyRcPayload={applyRcPayload} handleNext={handleNext} />;
+      case 1: return <StepRc carDetails={data} applyRcPayload={applyRcPayload} handleChange={handleChange} handleNext={handleNext} />;
       case 2: return <StepDetails carDetails={data} handleChange={handleChange} handleNext={handleNext} />;
       case 3: return <StepImages carDetails={data} handleChange={handleChange} handleNext={handleNext} />;
       case 4: return <StepLocation carDetails={data} handleChange={handleChange} handleNext={handleNext} />;
@@ -344,7 +344,7 @@ const AddCar = ({ route }) => {
 };
 
 // ── Step 1: Upload the RC card ────────────────────────────────────────────────
-const StepRc = ({ carDetails, applyRcPayload, handleNext }) => {
+const StepRc = ({ carDetails, applyRcPayload, handleChange, handleNext }) => {
   const [image, setImage] = useState(null); // { uri, type, fileName }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
