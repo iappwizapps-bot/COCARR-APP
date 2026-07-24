@@ -20,18 +20,31 @@ export const notify = (message) => {
   else Alert.alert('', text);
 };
 
+// Object keys are UUIDs. Older uploads were stored as `<endpoint>/<bucket><uuid>`
+// (the presigned URL has no trailing slash), so using the whole path as the key
+// 404s. Prefer the trailing UUID when one is present.
+const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+const extractKey = (path) => {
+  const clean = String(path || '').replace(/^\/+/, '').split('?')[0];
+  const found = clean.match(UUID_RE);
+  return found ? found[found.length - 1] : clean;
+};
+
 export const photoUrl = (value) => {
   if (!value || typeof value !== 'string') return value;
   if (/^(file|content|ph|assets-library|data):/i.test(value)) return value;
-  if (value.startsWith(`${API_URL}/image/`)) return value;
+  // Already proxied — but the key may still be the malformed bucket+uuid form.
+  if (value.startsWith(`${API_URL}/image/`)) {
+    return `${API_URL}/image/${extractKey(value.split('/image/')[1])}`;
+  }
   if (/^https?:\/\//i.test(value)) {
     const match = value.match(/^https?:\/\/([^/]+)\/(.+)$/);
     if (match && match[1].endsWith('storageapi.dev')) {
-      return `${API_URL}/image/${match[2]}`;
+      return `${API_URL}/image/${extractKey(match[2])}`;
     }
     return value;
   }
-  return `${API_URL}/image/${value.replace(/^\/+/, '')}`;
+  return `${API_URL}/image/${extractKey(value)}`;
 };
 
 export const UnauthAxios = () => {
