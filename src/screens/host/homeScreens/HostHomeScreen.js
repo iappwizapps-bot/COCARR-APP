@@ -11,6 +11,7 @@ import CustomText from '../../../components/CustomText';
 import { setSelectedCity, setShowCityLocation, setShowCityPicker } from '../../../store/bookingSlice';
 import Carousel from 'react-native-reanimated-carousel';
 import FiveStar from '../../../components/host/FiveStar';
+import ModeSwitcher from '../../../components/ModeSwitcher';
 // import Logo from '../../images/logo.png';
 // import { BottomSheet, BottomSheetView } from '@gorhom/bottom-sheet';
 // Cars awaiting admin approval surface first so hosts notice them.
@@ -51,6 +52,8 @@ export default function HostHomeScreen() {
               <CustomText fontType='primary' weight='Medium' style={{color:'#a3a3a3', fontSize:11, textAlign:'left',marginBottom:0}}>Cocarr Host</CustomText>
             </View>
         </View>
+        {/* Same control, same corner, as the renting home screen. */}
+        <ModeSwitcher />
         {/* <TouchableOpacity style={{flexDirection:'row', alignItems:'center', gap:4,backgroundColor:'#1c1c1e',borderRadius:5,paddingVertical:8,paddingHorizontal:12,shadowOpacity:0.5,shadowRadius:1,shadowColor:'#454545',justifyContent:'center'}} onPress={()=>dispatch(setShowCityPicker(true))}>
           <View>
             <CustomText fontType='primary' weight='Bold' style={{color:'#959595', fontSize:10, fontWeight:'500',textAlign:'left',marginBottom:0,textTransform:'uppercase'}}>

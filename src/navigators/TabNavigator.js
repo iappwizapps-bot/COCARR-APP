@@ -7,7 +7,6 @@ import { RidesStackNavigator } from './RidesStackNavigator';
 import { ProfileStackNavigator } from './ProfileStackNavigator';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
-import HostScreen from '../screens/homeScreens/HostScreen';
 import HomeIcon from '../images/home.js';
 import { Image, Path, Svg } from 'react-native-svg';
 import { useDispatch, useSelector } from 'react-redux';
@@ -107,13 +106,9 @@ export function TabNavigator() {
             
           }}
         />
-        <Tab.Screen 
-          name="Host" 
-          component={HostScreen} 
-          options={{
-            tabBarIcon: ({color, size}) => <Icon name="settings-outline" size={22} color={color} />
-          }}
-        />
+        {/* The "Host" tab was removed. Pressing it swapped the whole root
+            navigator, which a tab press should never do — hosting is a mode,
+            reached through ModeSwitcher on the Home header, not a destination. */}
       </Tab.Navigator>
   );
 }

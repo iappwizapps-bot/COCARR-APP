@@ -1,25 +1,13 @@
 import React, { useEffect } from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Alert, SafeAreaView } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
-import { HomeStackNavigator } from './HomeStackNavigator';
-import { RidesStackNavigator } from './RidesStackNavigator';
-import { ProfileStackNavigator } from './ProfileStackNavigator';
-import { SettingsScreen } from '../screens/SettingsScreen';
-import { getFocusedRouteNameFromRoute, useNavigation } from '@react-navigation/native';
 import HostScreen from '../screens/homeScreens/HostScreen';
-import HomeIcon from '../images/home.js';
-import { Image, Path, Svg } from 'react-native-svg';
 import { useDispatch, useSelector } from 'react-redux';
 import { CityPickerScreen } from '../screens/homeScreens/CityPickerScreen.js';
 import { API_URL } from '../utils/constants.js';
 import axios from 'axios';
 import { setShowLastBooking } from '../store/bookingSlice.js';
 import { ReviewScreen } from '../screens/rideScreens/ReviewScreen.jsx';
-import { store } from '../store/store.js';
-import { updateToken } from '../store/authSlice.js';
-import { getAuth } from '@react-native-firebase/auth';
-import {CustomTabBar} from '../components/navigation/CustomTabBar'; // Import CustomTabBar component
+import { setHostStatus } from '../store/authSlice.js';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { TabNavigator } from './TabNavigator.js';
 import { HostBookingsScreen } from '../screens/host/bookingScreens/HostBookingsScreen.js';
@@ -63,8 +51,6 @@ const Stack = createNativeStackNavigator();
 
 
 export function MainNavigator() {
-  const navigation = useNavigation();
-  const bookingInfo = useSelector(state => state.booking);
   const auth = useSelector(state => state.auth);
   const dispatch = useDispatch();
 
@@ -87,14 +73,35 @@ export function MainNavigator() {
 
 
 
+  // Mode is NOT navigated to — the shell below is rendered from `userRole`, and
+  // React Navigation unmounts the other one. The old effect called
+  // navigation.navigate() here while HostScreen simultaneously called
+  // navigation.replace(), so every switch ran two transitions at once.
+
+  // `isHost` is a server fact, so re-check it once per authenticated session.
+  // This is also what stops a stale persisted userRole:'host' from rendering the
+  // host shell for an account that never registered as one.
   useEffect(() => {
-    if(auth.userRole === 'host') navigation.navigate('HostTab');
-    else navigation.navigate('HomeTab');
-  }, [auth.userRole]);
+    if (!auth.isAuthenticated) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await axios.get(`${API_URL}/host/check`);
+        if (!cancelled) dispatch(setHostStatus({ isHost: !!res.data?.isHost }));
+      } catch (error) {
+        // Offline or transient failure: leave the last known value alone rather
+        // than dropping a host back to customer mode on a flaky network.
+        console.log('Host status check skipped:', error?.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [auth.isAuthenticated, dispatch]);
 
   useEffect(() => {
     if(auth.isAuthenticated) setupNotificationListeners()
   },[auth.isAuthenticated])
+
+  const isHostMode = auth.userRole === 'host';
 
 
 
@@ -107,8 +114,18 @@ export function MainNavigator() {
       <ReviewScreen/>
       <Stack.Navigator screenOptions={{headerShown:false}}>
 
-        <Stack.Screen name="HomeTab" component={TabNavigator} />
-        <Stack.Screen name="HostTab" component={HostNavigator} />
+        {/* Exactly one shell exists at a time. Switching modes changes which
+            Stack.Screen is declared, and React Navigation resets to it — no
+            navigate/replace call is involved anywhere. */}
+        {isHostMode ? (
+          <Stack.Screen name="HostTab" component={HostNavigator} />
+        ) : (
+          <Stack.Screen name="HomeTab" component={TabNavigator} />
+        )}
+
+        {/* Host sign-up. A pushed route, not a tab and not a shell: it is only
+            relevant until the account becomes a host. */}
+        <Stack.Screen name="BecomeHost" component={HostScreen} />
 
         <Stack.Group>
           <Stack.Screen name="HostBookings" component={HostBookingsScreen} />

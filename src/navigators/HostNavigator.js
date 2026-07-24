@@ -1,12 +1,7 @@
 import React, { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { HomeStackNavigator } from './HomeStackNavigator';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
-import { HostBookingNavigator } from './HostBookingNavigator.js';
-import { HostCarsNavigator } from './HostCarsNavigator.js';
-import { HostProfileStackNavigator } from './HostProfileStackNavigator.js';
-import { HostInboxStackNavigator } from './HostInboxStackNavigator.js';
 import { Svg, Path } from 'react-native-svg';
 import HostHomeScreen from '../screens/host/homeScreens/HostHomeScreen.js';
 import { HostBookingsScreen } from '../screens/host/bookingScreens/HostBookingsScreen.js';
