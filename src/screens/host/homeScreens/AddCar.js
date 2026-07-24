@@ -89,7 +89,6 @@ const lockedFromRc = (payload) => {
   mark('ownerName', payload?.ownerName);
   mark('model', payload?.model);
   mark('maker', payload?.maker);
-  mark('variant', payload?.variant);
   mark('color', payload?.color);
   mark('vehicleYear', specs.vehicleYear);
   mark('vehicleType', specs.vehicleType);
@@ -232,7 +231,6 @@ const AddCar = ({ route }) => {
     engineNumber: '',
     chassisNumber: '',
     maker: '',
-    variant: '',
     color: '',
     registrationDate: '',
     rcStatus: '',
@@ -279,7 +277,6 @@ const AddCar = ({ route }) => {
       rcStatus: payload.rcStatus || prev.rcStatus,
       insuranceUpto: payload.insuranceUpto || prev.insuranceUpto,
       maker: payload.maker || prev.maker,
-      variant: payload.variant || prev.variant,
       color: payload.color || prev.color,
       locked: lockedFromRc(payload),
     }));
@@ -306,7 +303,6 @@ const AddCar = ({ route }) => {
           vehicleSeats: response.data.vehicleSeats ? String(response.data.vehicleSeats) : prev.vehicleSeats,
           ownerName: response.data.ownerName || prev.ownerName,
           maker: response.data.vehicleMaker || prev.maker,
-          variant: response.data.vehicleVariant || prev.variant,
           color: response.data.vehicleColor || prev.color,
         }));
       }
@@ -562,7 +558,7 @@ const StepDetails = ({ carDetails, handleChange, handleNext }) => {
   useEffect(() => { loadOptions(); }, []);
 
   // City is chosen on the Location step, so it isn't required here.
-  const canContinue = !!carDetails.brandId && !!carDetails.vehicleName &&
+  const canContinue = !!carDetails.vehicleName &&
     !!carDetails.vehicleNumber && !!carDetails.vehicleYear && !!carDetails.vehicleCc &&
     !!carDetails.vehicleType && !!carDetails.vehicleFuelType;
 
@@ -595,11 +591,6 @@ const StepDetails = ({ carDetails, handleChange, handleNext }) => {
         <DetailField label='Registration Number' value={carDetails.vehicleNumber} locked={!!locked.vehicleNumber}
           onChange={(t) => handleChange('vehicleNumber', t.toUpperCase())} placeholder='e.g. TS09AB1234' />
 
-        <View style={{marginTop:18}}>
-          <CustomText fontType='primary' weight='SemiBold' style={{color:'#757575', fontSize:11,textTransform:'uppercase',letterSpacing:.15,marginBottom:4}}>Vehicle Brand</CustomText>
-          <OptionPicker placeholder={brands.length ? 'Select Brand' : 'Loading brands…'} options={brands} selectedId={carDetails.brandId} onSelect={(o) => { handleChange('brandId', o.id); handleChange('brandName', o.name); }} />
-        </View>
-
         <DetailField label='Vehicle Name' value={carDetails.vehicleName} onChange={(t) => handleChange('vehicleName', t)} placeholder='e.g. Creta SX' />
         <DetailField label='Model' value={carDetails.model} locked={!!locked.model} onChange={(t) => handleChange('model', t)} placeholder='e.g. Creta' />
 
@@ -607,10 +598,6 @@ const StepDetails = ({ carDetails, handleChange, handleNext }) => {
           onChange={(t) => handleChange('maker', t)} placeholder='e.g. HYUNDAI MOTOR INDIA LTD' />
 
         <View style={{flexDirection:'row',gap:12}}>
-          <View style={{flex:1}}>
-            <DetailField label='Variant' value={carDetails.variant} locked={!!locked.variant}
-              onChange={(t) => handleChange('variant', t)} placeholder='e.g. SX(O)' />
-          </View>
           <View style={{flex:1}}>
             <DetailField label='Colour' value={carDetails.color} locked={!!locked.color}
               onChange={(t) => handleChange('color', t)} placeholder='e.g. White' />
@@ -1115,7 +1102,6 @@ const StepReview = ({ carDetails, navigation }) => {
         engineNumber: carDetails.engineNumber,
         chassisNumber: carDetails.chassisNumber,
         maker: carDetails.maker,
-        variant: carDetails.variant,
         color: carDetails.color,
         rcImageUrl: carDetails.rcImageUrl,
         images: carDetails.images,
@@ -1158,7 +1144,6 @@ const StepReview = ({ carDetails, navigation }) => {
           <Row label='Name' value={carDetails.vehicleName} />
           <Row label='Model' value={carDetails.model} />
           <Row label='Maker' value={carDetails.maker} />
-          <Row label='Variant' value={carDetails.variant} />
           <Row label='Colour' value={carDetails.color} />
           <Row label='Registration' value={carDetails.vehicleNumber} />
           <Row label='Owner' value={carDetails.ownerName} />
