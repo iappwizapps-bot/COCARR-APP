@@ -1072,8 +1072,8 @@ const StepReview = ({ carDetails, navigation }) => {
       });
       setBusy(false);
       notify('Your car is listed');
-      // Onboarding complete → back to the host dashboard.
-      navigation.navigate('HostCarInfo', { vehicleId: response.data.id });
+      // Onboarding complete → back to the host home tab.
+      navigation.navigate('HostTab', { screen: 'HostHome' });
     } catch (error) {
       setBusy(false);
       console.error('Error publishing listing:', error.message);

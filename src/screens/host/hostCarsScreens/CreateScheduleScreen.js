@@ -13,7 +13,8 @@ import ActionSheet, { ScrollView } from 'react-native-actions-sheet';
 
 export function CreateScheduleScreen({ route }) {
     const vehicleId = route.params?.vehicleId || '';
-    const [scheduleInfo, setScheduleInfo] = useState({vehicleId:'',startTime:'',endTime:''});
+    // Pre-select the car when opened from a specific car's Availability tab.
+    const [scheduleInfo, setScheduleInfo] = useState({vehicleId:vehicleId,startTime:'',endTime:''});
   const [startDate, setStartDate] = useState(scheduleInfo.startTime ? new Date(scheduleInfo.startTime) : new Date());
   const [endDate, setEndDate] = useState(scheduleInfo.endTime ? new Date(scheduleInfo.endTime) : new Date());
   const [startTime, setStartTime] = useState(scheduleInfo.startTime ? new Date(scheduleInfo.startTime) : new Date());
@@ -281,7 +282,7 @@ export function CreateScheduleScreen({ route }) {
         <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center',alignContent:"center",width:'100%'}}>
             <View>
                 <CustomText fontType='primary' weight='Bold' style={{color:'#757575', fontSize:9,marginBottom:2,textTransform:'uppercase'}}>Selected Car</CustomText>
-                <CustomText fontType='primary' weight='Bold' style={{color:'#e3e3e3', fontSize:11,textTransform:'uppercase'}}>{scheduleInfo.vehicleId ? cars.find(car => car.id === scheduleInfo.vehicleId).vehicleName : '-'}</CustomText>
+                <CustomText fontType='primary' weight='Bold' style={{color:'#e3e3e3', fontSize:11,textTransform:'uppercase'}}>{cars.find(car => car.id === scheduleInfo.vehicleId)?.vehicleName || '-'}</CustomText>
             </View>
             <View style={{flexDirection:'row', alignItems:'center', justifyContent:'center'}}>
                 <Icon name="chevron-down" size={16} color="#757575" />

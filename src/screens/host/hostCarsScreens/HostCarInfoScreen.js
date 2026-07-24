@@ -182,6 +182,77 @@ const CarImageBlock = ({vehicle}) => {
 
 
 
+// Availability for this car — mirrors the web detail page's Availability
+// section. Lists the car's schedule windows and links into the existing
+// CreateSchedule / ScheduleInfo screens.
+const Availability = ({ vehicle }) => {
+  const navigation = useNavigation();
+  const [schedules, setSchedules] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${API_URL}/host/schedule?vehicleId=${vehicle.id}&sort=startTime&offset=0&limit=50`);
+      setSchedules(res.data?.schedules || res.data?.data || []);
+    } catch (error) {
+      console.log('Error fetching schedules:', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Reload on focus so a newly created schedule shows up on return.
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', load);
+    load();
+    return unsubscribe;
+  }, [navigation, vehicle?.id]);
+
+  return (
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('CreateSchedule', { vehicleId: vehicle.id })}
+        style={{ backgroundColor: '#EDBF3135', borderRadius: 8, paddingVertical: 14, alignItems: 'center', marginBottom: 16 }}
+      >
+        <CustomText fontType='primary' weight='Bold' style={{ color: BRAND_COLOR, fontSize: 11, textTransform: 'uppercase', letterSpacing: -0.15 }}>
+          + Add Schedule
+        </CustomText>
+      </TouchableOpacity>
+
+      {loading ? (
+        <ActivityIndicator size='small' color={BRAND_COLOR} />
+      ) : schedules.length === 0 ? (
+        <CustomText fontType='primary' weight='Regular' style={{ color: '#757575', fontSize: 12, textAlign: 'center', marginTop: 12 }}>
+          No availability windows set for this car yet.
+        </CustomText>
+      ) : (
+        schedules.map((s) => {
+          const past = new Date(s.endTime).getTime() < Date.now();
+          const blocked = (s.scheduleBlocks || []).filter((b) => !b.deleted).length;
+          return (
+            <TouchableOpacity
+              key={s.id}
+              onPress={() => navigation.navigate('ScheduleInfo', { scheduleId: s.id })}
+              style={{ backgroundColor: '#1c1c1e', borderRadius: 10, padding: 14, marginBottom: 10, opacity: past ? 0.55 : 1, flexDirection: 'row', alignItems: 'center' }}
+            >
+              <View style={{ flex: 1 }}>
+                <CustomText fontType='primary' weight='Medium' style={{ color: '#e3e3e3', fontSize: 13, marginBottom: 3 }}>
+                  {formatDate(s.startTime)} → {formatDate(s.endTime)}
+                </CustomText>
+                <CustomText fontType='primary' weight='Regular' style={{ color: '#757575', fontSize: 11, textTransform: 'capitalize' }}>
+                  {s.status}{blocked > 0 ? ` · ${blocked} blocked` : ''}{past ? ' · ended' : ''}
+                </CustomText>
+              </View>
+              <Icon name='chevron-forward' size={16} color='#757575' />
+            </TouchableOpacity>
+          );
+        })
+      )}
+    </ScrollView>
+  );
+};
+
 const TabViewInfo = ({vehicle}) => {
 
   const [index, setIndex] = useState(0);
@@ -189,14 +260,16 @@ const TabViewInfo = ({vehicle}) => {
     { key: 'info', title: 'Info' },
     { key: 'images', title: 'Images' },
     // { key: 'plan', title: 'Pricing Plan' },
-    { key: 'preferences', title: 'Preferences' }
+    { key: 'preferences', title: 'Preferences' },
+    { key: 'schedule', title: 'Availability' }
   ]);
 
   const renderScene = SceneMap({
     info: ()=><Info vehicle={vehicle}/>,
     images: ()=><Images vehicle={vehicle}/>,
     // plan: ()=><PricingPlan vehicle={vehicle}/>,
-    preferences: ()=><Preferences vehicle={vehicle}/>
+    preferences: ()=><Preferences vehicle={vehicle}/>,
+    schedule: ()=><Availability vehicle={vehicle}/>
   });
 
   const renderTabBar = (props) => {
