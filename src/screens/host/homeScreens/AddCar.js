@@ -752,43 +752,46 @@ const StepLocation = ({ carDetails, handleChange, handleNext }) => {
   const [selectedCity, setSelectedCity] = useState(null);
   const [cities, setCities] = useState([]);
   const [detecting, setDetecting] = useState(false);
-  const [showInvalid, setShowInvalid] = useState(false);
-  const [search, setSearch] = useState('');
+  const [checking, setChecking] = useState(false);
   const [results, setResults] = useState([]);
-  const [placeLabel, setPlaceLabel] = useState('');
+  const [locationText, setLocationText] = useState('');
+  const [address, setAddress] = useState('');
+  const [inRange, setInRange] = useState(null); // null = not checked, true/false = in/out of range
 
-  const validateLocation = async (lat, lng, city = selectedCity) => {
+  const resetPoint = () => { setMarker(null); setAddress(''); setInRange(null); };
+
+  // Drops the pin, resolves the address and runs the range check.
+  const applyPoint = async (lat, lng, city = selectedCity) => {
+    if (!city) return;
+    setMarker({ latitude: lat, longitude: lng });
+    setRegion((r) => ({ ...r, latitude: lat, longitude: lng }));
+    setChecking(true);
     try {
-      const response = await axios.post(`${API_URL}/utility/validate-geo?lat=${lat}&lng=${lng}&cityId=${city.id}`);
-      const { city: newCity, isCityChanged, isPlaceValid } = response.data;
-      if (isCityChanged) { setSelectedCity(newCity); handleChange('cityId', newCity.id); handleChange('cityName', newCity.name); }
-      else if (!isPlaceValid) {
-        setShowInvalid(true);
-        setMarker({ latitude: parseFloat(city.lat), longitude: parseFloat(city.lng) });
-        return false;
-      }
-      return true;
+      const res = await axios.post(`${API_URL}/utility/validate-geo?lat=${lat}&lng=${lng}&cityId=${city.id}`);
+      const { info, city: newCity, isCityChanged, isPlaceValid } = res.data;
+      if (isCityChanged && newCity) { setSelectedCity(newCity); handleChange('cityId', newCity.id); handleChange('cityName', newCity.name); }
+      const addr = info?.formatted_address || '';
+      setAddress(addr);
+      setLocationText(addr);
+      setInRange(!!isPlaceValid);
     } catch (error) {
-      notify(apiError(error, 'Error validating location'));
-      return false;
+      setInRange(false);
+      notify(apiError(error, 'Could not validate this location'));
+    } finally {
+      setChecking(false);
     }
   };
 
-  const setPoint = async (lat, lng) => {
-    setMarker({ latitude: lat, longitude: lng });
-    setRegion((r) => ({ ...r, latitude: lat, longitude: lng }));
-    await validateLocation(lat, lng);
-  };
+  const handleMapPress = (e) => applyPoint(e.nativeEvent.coordinate.latitude, e.nativeEvent.coordinate.longitude);
+  const handleMarkerDrag = (e) => applyPoint(e.nativeEvent.coordinate.latitude, e.nativeEvent.coordinate.longitude);
 
-  const handleMapPress = (e) => setPoint(e.nativeEvent.coordinate.latitude, e.nativeEvent.coordinate.longitude);
-  const handleMarkerDrag = (e) => setPoint(e.nativeEvent.coordinate.latitude, e.nativeEvent.coordinate.longitude);
-
+  // Current-location icon.
   const detect = async () => {
     try {
       setDetecting(true);
+      setResults([]);
       const location = await getCurrentLocation(true);
-      setPlaceLabel('Current location');
-      await setPoint(location.latitude, location.longitude);
+      await applyPoint(location.latitude, location.longitude);
     } catch (error) {
       notify('Failed to detect location');
     } finally {
@@ -796,29 +799,41 @@ const StepLocation = ({ carDetails, handleChange, handleNext }) => {
     }
   };
 
+  // Typing searches; it also clears the previously resolved point.
   const runSearch = async (text) => {
-    setSearch(text);
+    setLocationText(text);
+    resetPoint();
     if (!text || text.length < 3 || !selectedCity) { setResults([]); return; }
     try {
       const res = await axios.get(`${API_URL}/utility/autocomplete`, { params: { search: text, cityId: selectedCity.id } });
-      setResults(asList(res.data).slice(0, 5));
+      setResults(asList(res.data).slice(0, 6));
     } catch (error) { setResults([]); }
   };
 
   const choosePlace = async (place) => {
     setResults([]);
-    setSearch('');
-    setPlaceLabel(place.description || '');
+    setLocationText(place.description || '');
+    setChecking(true);
     try {
       const res = await axios.post(`${API_URL}/utility/validate-place`, { placeId: place.place_id, cityId: selectedCity.id });
       const loc = res.data?.info?.geometry?.location;
-      if (!loc) return;
+      const addr = res.data?.info?.formatted_address || place.description;
       if (res.data.isCityChanged && res.data.city) { setSelectedCity(res.data.city); handleChange('cityId', res.data.city.id); handleChange('cityName', res.data.city.name); }
-      else if (!res.data.isPlaceValid) { setShowInvalid(true); return; }
-      setMarker({ latitude: loc.lat, longitude: loc.lng });
-      setRegion((r) => ({ ...r, latitude: loc.lat, longitude: loc.lng }));
+      if (loc) {
+        setMarker({ latitude: loc.lat, longitude: loc.lng });
+        setRegion((r) => ({ ...r, latitude: loc.lat, longitude: loc.lng }));
+        setAddress(addr);
+        setLocationText(addr);
+        setInRange(!!res.data.isPlaceValid);
+      } else {
+        resetPoint();
+        notify('Could not resolve that location. Try another search.');
+      }
     } catch (error) {
+      resetPoint();
       notify(apiError(error, 'Could not select that place'));
+    } finally {
+      setChecking(false);
     }
   };
 
@@ -831,9 +846,7 @@ const StepLocation = ({ carDetails, handleChange, handleNext }) => {
       const city = list.find((c) => c.id === carDetails.cityId) || list[0];
       if (!city) { setLoading(false); notify("Couldn't load cities."); return; }
       setSelectedCity(city);
-      const lat = parseFloat(city.lat), lng = parseFloat(city.lng);
-      setRegion({ latitude: lat, longitude: lng, latitudeDelta: 0.0922, longitudeDelta: 0.0421 });
-      setMarker({ latitude: lat, longitude: lng });
+      setRegion({ latitude: parseFloat(city.lat), longitude: parseFloat(city.lng), latitudeDelta: 0.0922, longitudeDelta: 0.0421 });
       setLoading(false);
     } catch (error) {
       setLoading(false);
@@ -846,19 +859,19 @@ const StepLocation = ({ carDetails, handleChange, handleNext }) => {
     setSelectedCity(option);
     handleChange('cityId', option.id);
     handleChange('cityName', option.name);
-    setPlaceLabel('');
-    const lat = parseFloat(option.lat), lng = parseFloat(option.lng);
-    setRegion({ latitude: lat, longitude: lng, latitudeDelta: 0.0922, longitudeDelta: 0.0421 });
-    setMarker({ latitude: lat, longitude: lng });
+    setLocationText('');
+    setResults([]);
+    resetPoint();
+    setRegion({ latitude: parseFloat(option.lat), longitude: parseFloat(option.lng), latitudeDelta: 0.0922, longitudeDelta: 0.0421 });
   };
 
   const submit = () => {
-    if (!marker || !selectedCity) return;
+    if (!marker || !selectedCity || inRange !== true) return;
     setSubmitLoading(true);
     handleChange('pickupPoint', {
       cityId: selectedCity.id,
       cityName: selectedCity.name,
-      address: placeLabel || selectedCity.name,
+      address: address || selectedCity.name,
       lat: marker.latitude,
       long: marker.longitude,
     });
@@ -868,64 +881,61 @@ const StepLocation = ({ carDetails, handleChange, handleNext }) => {
 
   if (loading) {
     return (
-      <View style={{flex:1,justifyContent:'center',alignItems:'center',gap:12}}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size='small' color={BRAND_COLOR} />
       </View>
     );
   }
 
+  const canContinue = !!marker && inRange === true && !submitLoading;
+
   return (
-    <View style={{ flex: 1 }}>
-      <View style={{ flex: 1 }}>
-        <MapView style={{ flex: 1 }} region={region} showsCompass showsScale onPress={handleMapPress}>
+    <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 14 }}>
+      <CustomText fontType='primary' weight='SemiBold' style={{ color: '#757575', fontSize: 11, textTransform: 'uppercase', letterSpacing: .15, marginBottom: 4 }}>City</CustomText>
+      <OptionPicker placeholder={cities.length ? 'Select City' : 'Loading cities…'} options={cities} selectedId={selectedCity?.id} onSelect={changeCity} />
+
+      <CustomText fontType='primary' weight='SemiBold' style={{ color: '#757575', fontSize: 11, textTransform: 'uppercase', letterSpacing: .15, marginTop: 18, marginBottom: 4 }}>Pickup Location</CustomText>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <TextInput
+          placeholder='Search area, landmark or address…'
+          placeholderTextColor='#757575'
+          value={locationText}
+          onChangeText={runSearch}
+          style={{ flex: 1, backgroundColor: '#1c1c1e', borderRadius: 5, paddingVertical: 10, paddingHorizontal: 12, color: '#fff', fontSize: 14 }}
+        />
+        <TouchableOpacity disabled={detecting} onPress={detect} style={{ width: 46, borderRadius: 5, backgroundColor: '#26261e', borderWidth: 1, borderColor: '#4a4326', justifyContent: 'center', alignItems: 'center' }}>
+          {detecting ? <ActivityIndicator size='small' color={BRAND_COLOR} /> : <Icon name='locate' size={20} color={BRAND_COLOR} />}
+        </TouchableOpacity>
+      </View>
+
+      {results.length > 0 ? (
+        <View style={{ backgroundColor: '#141416', borderRadius: 10, marginTop: 6, borderWidth: 1, borderColor: '#26262a', overflow: 'hidden' }}>
+          {results.map((place) => (
+            <TouchableOpacity key={place.place_id} onPress={() => choosePlace(place)} style={{ paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1f1f22' }}>
+              <CustomText fontType='primary' weight='Regular' style={{ color: '#e3e3e3', fontSize: 13 }} numberOfLines={1}>{place.description}</CustomText>
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : null}
+
+      {checking ? (
+        <CustomText fontType='primary' weight='Regular' style={{ color: '#757575', fontSize: 12, marginTop: 8 }}>Locating…</CustomText>
+      ) : inRange === true ? (
+        <CustomText fontType='primary' weight='Medium' style={{ color: '#6ee6b0', fontSize: 12, marginTop: 8 }}>✓ This location is within the service range.</CustomText>
+      ) : inRange === false ? (
+        <CustomText fontType='primary' weight='Medium' style={{ color: '#ff8f8f', fontSize: 12, marginTop: 8 }}>The selected location is not in range. Pick a location closer to the selected city.</CustomText>
+      ) : null}
+
+      <View style={{ flex: 1, marginTop: 12, borderRadius: 12, overflow: 'hidden' }}>
+        <MapView style={{ flex: 1 }} region={region} showsCompass onPress={handleMapPress}>
           {marker && <Marker coordinate={marker} draggable onDragEnd={handleMarkerDrag} pinColor={BRAND_COLOR} />}
           <Circle center={marker || region} radius={LOCATION_RADIUS_M} fillColor='#E3BF3122' strokeColor={BRAND_COLOR} strokeWidth={1} />
         </MapView>
       </View>
 
-      {/* City + search overlay */}
-      <View style={{position:'absolute',top:10,left:12,right:12,gap:8}}>
-        <View style={{backgroundColor:'#141416',borderRadius:10,paddingHorizontal:10}}>
-          <Select placeholder='Select City' options={cities} selected={selectedCity} label='name' onSelect={changeCity} containerStyle={{backgroundColor:'transparent'}} />
-        </View>
-        <View style={{backgroundColor:'#141416',borderRadius:10,flexDirection:'row',alignItems:'center',paddingHorizontal:12}}>
-          <Icon name='search' size={16} color='#8a8a92' />
-          <TextInput
-            placeholder='Search for a location'
-            placeholderTextColor='#757575'
-            value={search}
-            onChangeText={runSearch}
-            style={{flex:1,color:'#fff',fontSize:14,paddingVertical:11,paddingHorizontal:8}}
-          />
-        </View>
-        {results.length > 0 ? (
-          <View style={{backgroundColor:'#141416',borderRadius:10,overflow:'hidden'}}>
-            {results.map((place) => (
-              <TouchableOpacity key={place.place_id} onPress={() => choosePlace(place)} style={{paddingHorizontal:14,paddingVertical:12,borderBottomWidth:1,borderBottomColor:'#1f1f22'}}>
-                <CustomText fontType='primary' weight='Regular' style={{color:'#e3e3e3',fontSize:13}} numberOfLines={1}>{place.description}</CustomText>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : null}
-      </View>
-
-      <View style={{position:'absolute',top:results.length ? 260 : 122,right:12}}>
-        <TouchableHighlight disabled={detecting} underlayColor='#2f2f2f' onPress={detect} style={{justifyContent:'center',alignItems:'center',backgroundColor:'#2d2d2d',borderRadius:12,height:46,width:46}}>
-          <Icon name='locate-outline' size={20} color={BRAND_COLOR} />
-        </TouchableHighlight>
-      </View>
-
-      {placeLabel ? (
-        <View style={{position:'absolute',bottom:78,left:12,right:12,backgroundColor:'#141416cc',borderRadius:8,padding:10}}>
-          <CustomText fontType='primary' weight='SemiBold' style={{color:'#c9c9c9',fontSize:12}} numberOfLines={1}>📍 {placeLabel}</CustomText>
-        </View>
-      ) : null}
-
-      <TouchableOpacity disabled={submitLoading || !selectedCity} onPress={submit} style={{backgroundColor: (submitLoading || !selectedCity) ? '#959595' : BRAND_COLOR,borderRadius:8,paddingVertical:15,position:'absolute',bottom:14,left:12,right:12}}>
-        <CustomText fontType='primary' weight='Bold' style={{color:'#000',fontSize:12,textTransform:'uppercase',letterSpacing:-.15,textAlign:'center'}}>Continue</CustomText>
+      <TouchableOpacity disabled={!canContinue} onPress={submit} style={{ backgroundColor: canContinue ? BRAND_COLOR : '#959595', borderRadius: 8, paddingVertical: 15, marginVertical: 14 }}>
+        <CustomText fontType='primary' weight='Bold' style={{ color: '#000', fontSize: 12, textTransform: 'uppercase', letterSpacing: -.15, textAlign: 'center' }}>Continue</CustomText>
       </TouchableOpacity>
-
-      {showInvalid && <LocationInvalidScreen show={showInvalid} setShow={setShowInvalid} onPress={() => setShowInvalid(false)} />}
     </View>
   );
 };
