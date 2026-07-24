@@ -28,6 +28,13 @@ export function OTPScreen({ navigation, route }) {
 
   // Create refs for each TextInput
   const inputs = useRef([]);
+  // `isSubmitting` state updates asynchronously, so it can't block a second
+  // call fired in the same tick — iOS SMS autofill populates all four boxes at
+  // once and re-triggers the last one. A ref is the only reliable latch, and
+  // without it the OTP was verified twice: the first call succeeded and logged
+  // the user in, the second came back "Mobile no. already verified" and threw
+  // an alert over the home screen.
+  const submittingRef = useRef(false);
 
   // Handle OTP input change
   const handleChange = (text, index) => {
@@ -60,9 +67,10 @@ export function OTPScreen({ navigation, route }) {
 
   // Handle OTP submission
   const handleSubmit = async (enteredOtp) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setIsSubmitting(true);
     try {
-        console.log('entered otp',enteredOtp)
       const response = await axios.post(`${API_URL}/user/verify-otp`, {
         mobile: route.params.mobileNumber,
         referralCode: route.params.referralCode ? route.params.referralCode : '',
@@ -76,17 +84,26 @@ export function OTPScreen({ navigation, route }) {
         const authToken = await user.getIdToken();
         dispatch(login({ id: user.uid,user:{ userName: userDbInfo.name, email: userDbInfo.email,token:authToken, isPremium:userDbInfo.isPremium, profilePhoto:userDbInfo.profilePhoto,licenseVerified:userDbInfo.licenseVerified,kycVerified:userDbInfo.kycVerified, contactNumber:userDbInfo.contactNumber }}));
       } else {
-        Alert.alert('Error', 'Invalid OTP. Please try again.');
-        setOtp(['', '', '', '']);
-        inputs.current[0].focus();
+        resetForRetry('Invalid OTP. Please try again.');
       }
     } catch (error) {
-      setIsSubmitting(false);
-      console.error('Error verifying OTP:', error);
-      Alert.alert('Error', 'An error occurred. Please try again.');
-      setOtp(['', '', '', '']);
-      inputs.current[0].focus();
+      // A wrong or expired OTP is normal user error, not a crash — console.log
+      // keeps it out of the red-box overlay. Surface the server's own message
+      // ("Invalid OTP", "OTP expired", …) instead of a generic string.
+      console.log('OTP verification failed:', error?.response?.data || error?.message);
+      const serverMessage =
+        error?.response?.data?.error?.message || error?.response?.data?.message;
+      resetForRetry(serverMessage || 'An error occurred. Please try again.');
     }
+  };
+
+  // Clears the boxes and re-arms submission after a failed attempt.
+  const resetForRetry = (message) => {
+    submittingRef.current = false;
+    setIsSubmitting(false);
+    Alert.alert('Error', message);
+    setOtp(['', '', '', '']);
+    inputs.current[0]?.focus();
   };
 
   return (
@@ -127,13 +144,16 @@ export function OTPScreen({ navigation, route }) {
         </View>
         
         <View style={styles.bottomContainer}>
-          <TouchableOpacity 
-            style={[styles.button, 
-              { backgroundColor: otp.every(digit => digit !== '') ? '#EDBF31' : '#454545' }]}
-            disabled={!otp.every(digit => digit !== '')}
+          {/* The 4th digit auto-submits, so this button is live the moment the
+              code is complete — tapping it then sent a second verify for the
+              same OTP. Disabled while a request is in flight. */}
+          <TouchableOpacity
+            style={[styles.button,
+              { backgroundColor: otp.every(digit => digit !== '') && !isSubmitting ? '#EDBF31' : '#454545' }]}
+            disabled={!otp.every(digit => digit !== '') || isSubmitting}
             onPress={() => handleSubmit(otp.join(''))}
           >
-            <Text style={styles.buttonText}>Verify OTP</Text>
+            <Text style={styles.buttonText}>{isSubmitting ? 'Verifying…' : 'Verify OTP'}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

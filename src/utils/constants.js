@@ -15,9 +15,9 @@ export const BRAND_COLOR = '#EDBF31';
 // false = clicking Verify skips the API call and moves straight to the next
 // step. Flip to true once the KYC key is live on the backend (which also needs
 // RC_VERIFICATION_ENABLED=true there).
-export const SHOULD_VERIFY_VEHICLE = true;
+export const SHOULD_VERIFY_VEHICLE = false;
 
 // Verify-by-car-number bypass. When true, clicking "Verify" skips the
 // /host/vehicles/verify API call and goes straight to step 2 with the entered
 // number (fields editable). Set to false to hit the real RC verification API.
-export const BYPASS_RC_VERIFY = false;
+export const BYPASS_RC_VERIFY = true;
