@@ -1,7 +1,7 @@
 name: Android · Distribute to Firebase
 
-# Builds a release APK and ships it to Firebase App Distribution only when a
-# pull request is merged into develop (or on manual dispatch).
+# Builds a release APK and ships it to Firebase App Distribution on every push
+# to develop (including PR merges), or on manual dispatch.
 on:
   push:
    branches:
@@ -24,8 +24,9 @@ concurrency:
 jobs:
   distribute:
     name: Build & distribute Android
-    # Only run for a merged PR (skip PRs that are closed without merging).
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
+    # Runs for pushes to develop and manual dispatch. If a pull_request trigger
+    # is ever added back, only merged PRs qualify (never a closed-unmerged one).
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     environment: firebase-distribution
